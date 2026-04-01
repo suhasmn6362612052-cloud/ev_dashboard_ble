@@ -1620,6 +1620,45 @@
             color: #8899aa;
             font-size: 10px;
         }
+        /* --- FETCH/CONFIG WRITE PANEL STYLES --- */
+        .param-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0 !important;
+            border-bottom: 1px solid #11287c !important;
+            margin-bottom: 4px;
+        }
+
+        .param-label {
+            color: #8899aa;
+            font-size: 14px;
+            font-weight: bold;
+            flex: 1;
+        }
+
+        .param-inputs-wrap {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .param-input {
+            width: 60px;
+            padding: 6px;
+            background: #0044cc;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .param-input.max-field {
+            color: #00ffaa;
+            font-weight: bold;
+            background: #0044cc;
+        }
     </style>
 
     <!-- Firebase SDK -->
@@ -1703,7 +1742,7 @@
             </div>
 
             <!-- Characteristics -->
-            <div class="connection-panel" id="characteristicsPanel" style="display: block;">
+            <div class="connection-panel" id="characteristicsPanel" style="display: none;">
                 <div class="panel-title">📋 CHARACTERISTICS</div>
 
                 <select id="charSelect" class="uuid-entry" style="width: 100%; margin-bottom: 10px;">
@@ -1809,7 +1848,8 @@
                                         </div>
                                     </div>
                                     <div class="ev-slider-group">
-                                        <div class="ev-slider-label"><span>Throttle Voltage</span><span id="st_ThrotVolt">0.0
+                                        <div class="ev-slider-label"><span>Throttle Voltage</span><span
+                                                id="st_ThrotVolt">0.0
                                                 V</span></div>
                                         <div class="ev-slider-track">
                                             <div class="ev-slider-fill" id="slider_st_ThrotVolt"
@@ -2039,64 +2079,142 @@
 
                             <!-- Write Panel 1: Power & Torque -->
                             <div class="grid-panel" style="margin-bottom: 15px;">
-                                <div class="grid-title">⚡ POWER & TORQUE WRITES</div>
-                                <div class="param-row"><span class="param-label">AC Current Limit</span><input
-                                        type="number" id="write_ac_1" class="param-input"></div>
-                                <div class="param-row"><span class="param-label">DC Current Limit</span><input
-                                        type="number" id="write_dc_1" class="param-input"></div>
-                                <div class="param-row"><span class="param-label">Regen Limit</span><input type="number"
-                                        id="write_rg_1" class="param-input"></div>
-                                <div class="param-row"><span class="param-label">Torque Limit</span><input type="number"
-                                        id="write_trq_1" class="param-input"></div>
+                                <div class="grid-title" style="display: flex; justify-content: space-between;">
+                                    <span>⚡ POWER & TORQUE WRITES</span>
+                                    <span style="font-size: 12px; color: #ffaa00;">MAX | CURRENT LIMIT</span>
+                                </div>
+                                <div class="param-row">
+                                    <span class="param-label">AC Current Limit</span>
+                                    <div class="param-inputs-wrap">
+                                        <input type="number" id="write_ac_0" class="param-input max-field">
+                                        <input type="number" id="write_ac_1" class="param-input">
+                                    </div>
+                                </div>
+                                <div class="param-row">
+                                    <span class="param-label">DC Current Limit</span>
+                                    <div class="param-inputs-wrap">
+                                        <input type="number" id="write_dc_0" class="param-input max-field">
+                                        <input type="number" id="write_dc_1" class="param-input">
+                                    </div>
+                                </div>
+                                <div class="param-row">
+                                    <span class="param-label">Regen Limit</span>
+                                    <div class="param-inputs-wrap">
+                                        <input type="number" id="write_rg_0" class="param-input max-field">
+                                        <input type="number" id="write_rg_1" class="param-input">
+                                    </div>
+                                </div>
+                                <div class="param-row">
+                                    <span class="param-label">Torque Limit</span>
+                                    <div class="param-inputs-wrap">
+                                        <input type="number" id="write_trq_0" class="param-input max-field">
+                                        <input type="number" id="write_trq_1" class="param-input">
+                                    </div>
+                                </div>
                                 <button class="btn btn-warning" onclick="sendConfigChunk1()"
                                     style="width: 100%; margin-top: 10px;">📤 SEND POWER WRITES</button>
                             </div>
 
                             <!-- Write Panel 2: Speed & Battery -->
                             <div class="grid-panel" style="margin-bottom: 15px;">
-                                <div class="grid-title">🏎️ SPEED & THROTTLE WRITES</div>
-                                <div class="param-row"><span class="param-label">Speed Fwd Limit</span><input
-                                        type="number" id="write_spdF_1" class="param-input"></div>
-                                <div class="param-row"><span class="param-label">Vbatt Limit 1</span><input
-                                        type="number" id="write_Vbatt_1" class="param-input"></div>
-                                <div class="param-row"><span class="param-label">Vbatt Limit 2</span><input
-                                        type="number" id="write_Vbatt_2" class="param-input"></div>
-                                <div class="param-row"><span class="param-label">Vbatt Limit 3</span><input
-                                        type="number" id="write_Vbatt_3" class="param-input"></div>
-                                <div class="param-row"><span class="param-label">Thr Limit 1</span><input type="number"
-                                        id="write_Thr_1" class="param-input"></div>
-                                <div class="param-row"><span class="param-label">Thr Limit 2</span><input type="number"
-                                        id="write_Thr_2" class="param-input"></div>
-                                <div class="param-row"><span class="param-label">Thr Limit 3</span><input type="number"
-                                        id="write_Thr_3" class="param-input"></div>
+                                <div class="grid-title" style="display: flex; justify-content: space-between;">
+                                    <span>🏎️ SPEED & THROTTLE WRITES</span>
+                                    <span style="font-size: 12px; color: #ffaa00;">MAX | LIMITS</span>
+                                </div>
+                                <div class="param-row">
+                                    <span class="param-label">Speed Fwd Limit</span>
+                                    <div class="param-inputs-wrap">
+                                        <input type="number" id="write_spdF_0" class="param-input max-field">
+                                        <input type="number" id="write_spdF_1" class="param-input">
+                                    </div>
+                                </div>
+                                <div class="param-row">
+                                    <span class="param-label">Vbatt Limits (1,2,3)</span>
+                                    <div class="param-inputs-wrap">
+                                        <input type="number" id="write_Vbatt_0" class="param-input max-field">
+                                        <input type="number" id="write_Vbatt_1" class="param-input">
+                                        <input type="number" id="write_Vbatt_2" class="param-input">
+                                        <input type="number" id="write_Vbatt_3" class="param-input">
+                                    </div>
+                                </div>
+                                <div class="param-row">
+                                    <span class="param-label">Thr Limits (1,2,3)</span>
+                                    <div class="param-inputs-wrap">
+                                        <input type="number" id="write_Thr_0" class="param-input max-field">
+                                        <input type="number" id="write_Thr_1" class="param-input">
+                                        <input type="number" id="write_Thr_2" class="param-input">
+                                        <input type="number" id="write_Thr_3" class="param-input">
+                                    </div>
+                                </div>
                                 <button class="btn btn-warning" onclick="sendConfigChunk2()"
                                     style="width: 100%; margin-top: 10px;">📤 SEND SPEED WRITES</button>
                             </div>
 
                             <!-- Write Panel 3: Temperature & Accel -->
                             <div class="grid-panel" style="margin-bottom: 15px;">
-                                <div class="grid-title">🌡️ TEMP & RAMP WRITES</div>
-                                <div class="param-row"><span class="param-label">Motor Temp Limit</span><input
-                                        type="number" id="write_mtrTmp_1" class="param-input"></div>
-                                <div class="param-row"><span class="param-label">Ctrl Temp Limit</span><input
-                                        type="number" id="write_ctrTmp_1" class="param-input"></div>
-                                <div class="param-row"><span class="param-label">Acceleration</span><input type="number"
-                                        id="write_acc_1" class="param-input"></div>
-                                <div class="param-row"><span class="param-label">Deceleration</span><input type="number"
-                                        id="write_dec_1" class="param-input"></div>
+                                <div class="grid-title" style="display: flex; justify-content: space-between;">
+                                    <span>🌡️ TEMP & RAMP WRITES</span>
+                                    <span style="font-size: 12px; color: #ffaa00;">MAX | LIMIT</span>
+                                </div>
+                                <div class="param-row">
+                                    <span class="param-label">Motor Temp</span>
+                                    <div class="param-inputs-wrap">
+                                        <input type="number" id="write_mtrTmp_0" class="param-input max-field">
+                                        <input type="number" id="write_mtrTmp_1" class="param-input">
+                                    </div>
+                                </div>
+                                <div class="param-row">
+                                    <span class="param-label">Ctrl Temp</span>
+                                    <div class="param-inputs-wrap">
+                                        <input type="number" id="write_ctrTmp_0" class="param-input max-field">
+                                        <input type="number" id="write_ctrTmp_1" class="param-input">
+                                    </div>
+                                </div>
+                                <div class="param-row">
+                                    <span class="param-label">Accel</span>
+                                    <div class="param-inputs-wrap">
+                                        <input type="number" id="write_acc_0" class="param-input max-field">
+                                        <input type="number" id="write_acc_1" class="param-input">
+                                    </div>
+                                </div>
+                                <div class="param-row">
+                                    <span class="param-label">Decel</span>
+                                    <div class="param-inputs-wrap">
+                                        <input type="number" id="write_dec_0" class="param-input max-field">
+                                        <input type="number" id="write_dec_1" class="param-input">
+                                    </div>
+                                </div>
                                 <button class="btn btn-warning" onclick="sendConfigChunk3()"
                                     style="width: 100%; margin-top: 10px;">📤 SEND TEMP WRITES</button>
                             </div>
 
                             <!-- Write Panel 4: Eco Settings -->
                             <div class="grid-panel" style="margin-bottom: 15px;">
-                                <div class="grid-title">🌱 ECO MODE WRITES</div>
-                                <div class="param-row"><span class="param-label">Eco Speed</span><input type="number"
-                                        id="write_ecoSpd_1" class="param-input"></div>
-                                <div class="param-row"><span class="param-label">Eco Accel</span><input type="number"
-                                        id="write_ecoAcc_1" class="param-input"></div>
-                                <div class="param-row"><span class="param-label">Eco Power</span><input type="number"
-                                        id="write_ecoPwr_1" class="param-input"></div>
+                                <div class="grid-title" style="display: flex; justify-content: space-between;">
+                                    <span>🌱 ECO MODE WRITES</span>
+                                    <span style="font-size: 12px; color: #ffaa00;">MAX | LIMIT</span>
+                                </div>
+                                <div class="param-row">
+                                    <span class="param-label">Eco Speed</span>
+                                    <div class="param-inputs-wrap">
+                                        <input type="number" id="write_ecoSpd_0" class="param-input max-field">
+                                        <input type="number" id="write_ecoSpd_1" class="param-input">
+                                    </div>
+                                </div>
+                                <div class="param-row">
+                                    <span class="param-label">Eco Accel</span>
+                                    <div class="param-inputs-wrap">
+                                        <input type="number" id="write_ecoAcc_0" class="param-input max-field">
+                                        <input type="number" id="write_ecoAcc_1" class="param-input">
+                                    </div>
+                                </div>
+                                <div class="param-row">
+                                    <span class="param-label">Eco Power</span>
+                                    <div class="param-inputs-wrap">
+                                        <input type="number" id="write_ecoPwr_0" class="param-input max-field">
+                                        <input type="number" id="write_ecoPwr_1" class="param-input">
+                                    </div>
+                                </div>
                                 <button class="btn btn-warning" onclick="sendConfigChunk4()"
                                     style="width: 100%; margin-top: 10px;">📤 SEND ECO WRITES</button>
                             </div>
@@ -4717,7 +4835,7 @@
                 currentConfigMaxes[key] = arr[0];
 
                 // Update static write inputs if they exist (sync read -> write)
-                for (let i = 1; i < arr.length; i++) {
+                for (let i = 0; i < arr.length; i++) {
                     const writeInp = document.getElementById(`write_${key}_${i}`);
                     if (writeInp) writeInp.value = arr[i];
                 }
@@ -5647,26 +5765,23 @@
             let data = { cmd: 'cfg_write' };
             let hasData = false;
             keys.forEach(k => {
+                // querySelectorAll returns in document order, so _0 (Max) comes first
                 const inputs = document.querySelectorAll(`[id^="write_${k}_"]`);
                 if (inputs.length > 0) {
                     hasData = true;
-                    if (inputs.length === 1) {
-                        // Single value for key
-                        data[k] = parseFloat(inputs[0].value) || 0;
-                    } else {
-                        // Multiple values -> flat array (no maxVal prefix)
-                        const vals = [];
-                        inputs.forEach(inp => vals.push(parseFloat(inp.value) || 0));
-                        data[k] = vals;
-                    }
+                    const arr = [];
+                    inputs.forEach(inp => arr.push(parseFloat(inp.value) || 0));
+                    data[k] = arr;
                 }
             });
             if (hasData) {
-                document.getElementById('jsonInput').value = JSON.stringify(data, null, 2);
+                const jsonStr = JSON.stringify(data, null, 2);
+                document.getElementById('jsonInput').value = jsonStr;
+                document.getElementById('lastSentPayloadText').textContent = jsonStr;
                 sendJSON();
                 const ws = document.getElementById('writeStatus');
                 if (ws) {
-                    ws.textContent = '📤 Sending config...';
+                    ws.textContent = '📤 Sending config (batch)...';
                     ws.style.color = '#ffaa00';
                 }
             } else {
