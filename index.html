@@ -1252,18 +1252,23 @@
         .mobile-header {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             padding: 15px 20px;
-            background: #000B29;
+            background: linear-gradient(180deg, #000B29 0%, #05143a 100%);
             color: #fff;
-            gap: 15px;
+            border-bottom: 1px solid #11287c;
         }
 
         .mobile-header h1 {
             font-size: 24px;
-            font-weight: 500;
+            font-weight: 800;
             letter-spacing: 1px;
-            color: #fff;
             margin: 0;
+            text-transform: uppercase;
+            background: linear-gradient(90deg, #ffffff, #8899aa);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .app-logo {
@@ -1559,27 +1564,68 @@
             display: none !important;
         }
 
-        /* Top Status Bar (CAN + Range) */
+        /* Top Status Bar (Enlarged Technical Badges) */
         .top-status-bar {
             display: flex;
+            flex-wrap: wrap;
             justify-content: center;
             align-items: center;
-            gap: 20px;
-            background: #0d1b3e;
-            padding: 6px 15px;
-            border-bottom: 1px solid #11287c;
-            font-size: 11px;
+            gap: 8px;
+            background: #05143a;
+            padding: 10px 8px;
+            border-bottom: 2px solid #1a2b5e;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         }
 
-        .top-status-bar .status-item {
+        .status-item {
             display: flex;
             align-items: center;
-            gap: 5px;
-            color: #8899aa;
+            gap: 6px;
+            color: #ffffff;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(136, 153, 170, 0.2);
+            white-space: nowrap;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .status-item.premium {
+            font-weight: 800;
+            border-width: 1.5px;
+        }
+
+        .status-item.sent {
+            color: #00ffaa;
+            background: rgba(0, 255, 170, 0.1);
+            border-color: rgba(0, 255, 170, 0.4);
+        }
+
+        .status-item.rcvd {
+            color: #ffaa00;
+            background: rgba(255, 170, 0, 0.1);
+            border-color: rgba(255, 170, 0, 0.4);
+        }
+
+        .status-item.sw {
+            color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.4);
+        }
+
+        .status-item.err {
+            color: #ff4444;
+            background: rgba(255, 68, 68, 0.1);
+            border-color: rgba(255, 68, 68, 0.5);
+            display: none;
+            /* Hidden by default if zero */
         }
 
         .top-status-bar .status-dot {
-            font-size: 10px;
+            font-size: 12px;
+            text-shadow: 0 0 8px currentColor;
         }
 
         /* Bottom Status Bar (Connection info) */
@@ -1620,6 +1666,7 @@
             color: #8899aa;
             font-size: 10px;
         }
+
         /* --- FETCH/CONFIG WRITE PANEL STYLES --- */
         .param-row {
             display: flex;
@@ -1655,9 +1702,10 @@
         }
 
         .param-input.max-field {
-            color: #00ffaa;
+            color: #ff4444 !important;
             font-weight: bold;
-            background: #0044cc;
+            background: #002266;
+            cursor: not-allowed;
         }
     </style>
 
@@ -1673,13 +1721,13 @@
         <h1>EV Dashboard</h1>
 
         <!-- Status Dots -->
-        <div style="margin-left: auto; display: flex; gap: 8px;">
-            <span id="btIndicator" style="color: #ff4444; font-size: 10px;">●</span>
-            <span id="firebaseDot" class="firebase-dot" style="margin-top: 4px;"></span>
+        <div style="margin-left: auto; display: flex; gap: 12px; align-items: center;">
+            <span id="btIndicator" style="color: #ff4444; font-size: 16px; text-shadow: 0 0 8px currentColor;">●</span>
+            <span id="firebaseDot" class="firebase-dot" style="width: 12px; height: 12px;"></span>
         </div>
     </div>
 
-    <!-- Top Status Bar: CAN + Range -->
+    <!-- Top Status Bar: Utilization of "Above Space" -->
     <div class="top-status-bar">
         <div class="status-item">
             <span class="status-dot" id="canDot" style="color: #ff4444;">●</span>
@@ -1692,6 +1740,23 @@
         <div class="status-item">
             <span class="status-dot" id="runDot" style="color: #ff4444;">●</span>
             <span id="runStatusText">STOPPED</span>
+        </div>
+        <!-- Real-time Technical Badges -->
+        <div class="status-item premium sw">
+            <span>SW:</span>
+            <span id="hdrSw">v0.0.0.0</span>
+        </div>
+        <div class="status-item premium sent">
+            <span>SENT:</span>
+            <span id="hdrSent">0</span>
+        </div>
+        <div class="status-item premium rcvd">
+            <span>RCVD:</span>
+            <span id="hdrRcvd">0</span>
+        </div>
+        <div class="status-item premium err" id="hdrErrBadge">
+            <span>ERRS:</span>
+            <span id="hdrErrors">0</span>
         </div>
     </div>
 
@@ -1740,6 +1805,23 @@
                         CLEAR FIREBASE DB</button>
                 </div>
             </div>
+
+            <!-- Device Settings -->
+            <div class="connection-panel" id="deviceSettingsPanel">
+                <div class="panel-title">🏷️ DEVICE SETTINGS</div>
+                <div style="margin-bottom: 15px;">
+                    <label style="color: #8899aa; font-size: 11px; display: block; margin-bottom: 5px;">New Device Name
+                        (Max 20 chars):</label>
+                    <input type="text" id="newBleNameInput" class="uuid-entry" maxlength="20"
+                        placeholder="e.g. DCU_VEHICLE_01"
+                        style="width: 100%; border-color: #ffaa00; background: rgba(0,0,0,0.2);">
+                </div>
+                <button class="btn btn-warning" id="setBleNameBtn" onclick="setBleName()"
+                    style="width: 100%; font-size: 12px; height: 38px;">🏷️ SET BLE NAME</button>
+                <div id="bleNameStatus" style="color: #8899aa; font-size: 10px; margin-top: 8px; text-align: center;">
+                    Name remains same in dashboard until reconnect</div>
+            </div>
+
 
             <!-- Characteristics -->
             <div class="connection-panel" id="characteristicsPanel" style="display: none;">
@@ -2124,14 +2206,16 @@
                                 <div class="param-row">
                                     <span class="param-label">Speed Fwd Limit</span>
                                     <div class="param-inputs-wrap">
-                                        <input type="number" id="write_spdF_0" class="param-input max-field">
+                                        <input type="number" id="write_spdF_0" class="param-input max-field" readonly
+                                            style="color:red;">
                                         <input type="number" id="write_spdF_1" class="param-input">
                                     </div>
                                 </div>
                                 <div class="param-row">
                                     <span class="param-label">Vbatt Limits (1,2,3)</span>
                                     <div class="param-inputs-wrap">
-                                        <input type="number" id="write_Vbatt_0" class="param-input max-field">
+                                        <input type="number" id="write_Vbatt_0" class="param-input max-field" readonly
+                                            style="color:red;">
                                         <input type="number" id="write_Vbatt_1" class="param-input">
                                         <input type="number" id="write_Vbatt_2" class="param-input">
                                         <input type="number" id="write_Vbatt_3" class="param-input">
@@ -2140,7 +2224,8 @@
                                 <div class="param-row">
                                     <span class="param-label">Thr Limits (1,2,3)</span>
                                     <div class="param-inputs-wrap">
-                                        <input type="number" id="write_Thr_0" class="param-input max-field">
+                                        <input type="number" id="write_Thr_0" class="param-input max-field" readonly
+                                            style="color:red;">
                                         <input type="number" id="write_Thr_1" class="param-input">
                                         <input type="number" id="write_Thr_2" class="param-input">
                                         <input type="number" id="write_Thr_3" class="param-input">
@@ -2159,28 +2244,32 @@
                                 <div class="param-row">
                                     <span class="param-label">Motor Temp</span>
                                     <div class="param-inputs-wrap">
-                                        <input type="number" id="write_mtrTmp_0" class="param-input max-field">
+                                        <input type="number" id="write_mtrTmp_0" class="param-input max-field" readonly
+                                            style="color:red;">
                                         <input type="number" id="write_mtrTmp_1" class="param-input">
                                     </div>
                                 </div>
                                 <div class="param-row">
                                     <span class="param-label">Ctrl Temp</span>
                                     <div class="param-inputs-wrap">
-                                        <input type="number" id="write_ctrTmp_0" class="param-input max-field">
+                                        <input type="number" id="write_ctrTmp_0" class="param-input max-field" readonly
+                                            style="color:red;">
                                         <input type="number" id="write_ctrTmp_1" class="param-input">
                                     </div>
                                 </div>
                                 <div class="param-row">
                                     <span class="param-label">Accel</span>
                                     <div class="param-inputs-wrap">
-                                        <input type="number" id="write_acc_0" class="param-input max-field">
+                                        <input type="number" id="write_acc_0" class="param-input max-field" readonly
+                                            style="color:red;">
                                         <input type="number" id="write_acc_1" class="param-input">
                                     </div>
                                 </div>
                                 <div class="param-row">
                                     <span class="param-label">Decel</span>
                                     <div class="param-inputs-wrap">
-                                        <input type="number" id="write_dec_0" class="param-input max-field">
+                                        <input type="number" id="write_dec_0" class="param-input max-field" readonly
+                                            style="color:red;">
                                         <input type="number" id="write_dec_1" class="param-input">
                                     </div>
                                 </div>
@@ -2197,21 +2286,24 @@
                                 <div class="param-row">
                                     <span class="param-label">Eco Speed</span>
                                     <div class="param-inputs-wrap">
-                                        <input type="number" id="write_ecoSpd_0" class="param-input max-field">
+                                        <input type="number" id="write_ecoSpd_0" class="param-input max-field" readonly
+                                            style="color:red;">
                                         <input type="number" id="write_ecoSpd_1" class="param-input">
                                     </div>
                                 </div>
                                 <div class="param-row">
                                     <span class="param-label">Eco Accel</span>
                                     <div class="param-inputs-wrap">
-                                        <input type="number" id="write_ecoAcc_0" class="param-input max-field">
+                                        <input type="number" id="write_ecoAcc_0" class="param-input max-field" readonly
+                                            style="color:red;">
                                         <input type="number" id="write_ecoAcc_1" class="param-input">
                                     </div>
                                 </div>
                                 <div class="param-row">
                                     <span class="param-label">Eco Power</span>
                                     <div class="param-inputs-wrap">
-                                        <input type="number" id="write_ecoPwr_0" class="param-input max-field">
+                                        <input type="number" id="write_ecoPwr_0" class="param-input max-field" readonly
+                                            style="color:red;">
                                         <input type="number" id="write_ecoPwr_1" class="param-input">
                                     </div>
                                 </div>
@@ -2317,14 +2409,6 @@
                 <span id="bsConnText" style="color: #ff4444;">Disconnected</span>
             </div>
             <div class="bs-item">
-                <span style="color: #00ffaa;">Sent:</span>
-                <span id="bsSentCount" style="color: #00ffaa;">0</span>
-            </div>
-            <div class="bs-item">
-                <span style="color: #ff9900;">Rcvd:</span>
-                <span id="bsRcvdCount" style="color: #ff9900;">0</span>
-            </div>
-            <div class="bs-item">
                 <span>Parking:</span>
                 <span id="bsParkingText" style="color: #ffaa00;">Parked</span>
             </div>
@@ -2337,20 +2421,41 @@
     <!-- Mobile Bottom Navigation -->
     <div class="bottom-nav">
         <button class="nav-item" onclick="toggleSidebar()">
-            <img src="icon_ble.jpg" alt="BLE" style="width:24px; height:24px; border-radius:4px; object-fit:cover;">
+            <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m7 7 10 10-5 5V2l5 5L7 17"></path>
+            </svg>
             <span id="navConnStatus">BLE Setting</span>
         </button>
         <button class="nav-item active" onclick="switchNavTab('motor', this)">
-            <span class="nav-icon">🏠</span>
+            <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
             <span>Home</span>
         </button>
         <button class="nav-item" onclick="switchNavTab('fetch', this)">
-            <span class="nav-icon">⚙️</span>
+            <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path
+                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82 1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                </path>
+            </svg>
             <span>Setting</span>
         </button>
         <button class="nav-item" onclick="switchNavTab('autotune', this)">
-            <img src="icon_autotune.jpg" alt="Auto"
-                style="width:24px; height:24px; border-radius:4px; object-fit:cover;">
+            <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path
+                    d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a2 2 0 0 1-2.14-.79 2 2 0 0 0-3.18 0l-1.45 1.56Z">
+                </path>
+                <path
+                    d="m3.13 14.73 9.07-9.07a1 1 0 0 1 1.41 0l1.41 1.41a1 1 0 0 1 0 1.41l-9.07 9.07a1 1 0 0 1-1.41 0l-1.41-1.41a1 1 0 0 1 0-1.41Z">
+                </path>
+                <path d="m16 13 5.25 5.25a3 3 0 0 1-4.24 4.24L11.75 17.25"></path>
+            </svg>
             <span>Auto</span>
         </button>
     </div>
@@ -2401,8 +2506,17 @@
             }
             if (opts.rssi !== undefined) {
                 const r = opts.rssi;
-                _el('rangeBarText').textContent = 'Range: ' + r + ' dBm';
+                // Log-distance path-loss formula: d = 10 ^ ((TxPower - RSSI) / (10 * n))
+                // TxPower at 1m ≈ -59 dBm for BLE; n=2 (free space, good conditions)
+                const txPower = -59;
+                const n = 2.5; // use 2.5 for typical indoor/BLE conditions
+                const dist = Math.pow(10, (txPower - r) / (10 * n));
+                let distStr;
+                if (dist < 1.0) distStr = (dist * 100).toFixed(0) + ' cm';
+                else if (dist < 100) distStr = dist.toFixed(1) + ' m';
+                else distStr = '>100 m';
                 const c = r > -60 ? '#00ffaa' : r > -80 ? '#ffaa00' : '#ff4444';
+                _el('rangeBarText').textContent = '~' + distStr + ' (' + r + ' dBm)';
                 _el('rangeDot').style.color = c;
                 _el('rangeBarText').style.color = c;
             }
@@ -2414,6 +2528,12 @@
                 _el('bsSentCount').textContent = opts.sentCount;
             }
         }
+
+        // Global RSSI callback fired by BleManager.java every 3 seconds
+        window.onNativeBleRssi = function (rssi) {
+            updateStatusBars({ rssi: rssi });
+        };
+
 
         let nativeBleDevices = {}; // address -> {name, rssi}
         let nativeSelectedAddress = null;
@@ -2444,6 +2564,11 @@
 
             window.onNativeBleDeviceFound = function (name, address, rssi) {
                 if (nativeBleDevices[address]) return; // Skip duplicates
+
+                // Override with our custom renamed name if it exists in local storage
+                const cachedName = localStorage.getItem('dcu_ble_name_' + address);
+                if (cachedName) name = cachedName;
+
                 nativeBleDevices[address] = { name: name, rssi: rssi };
 
                 const dl = document.getElementById('deviceList');
@@ -2460,7 +2585,7 @@
                     document.querySelectorAll('.device-item').forEach(function (el) { el.classList.remove('selected'); });
                     div.classList.add('selected');
                     nativeSelectedAddress = address;
-                    document.getElementById('deviceInfo').textContent = name + ' (' + address.substring(0, 8) + '...)';
+                    document.getElementById('deviceInfo').textContent = name + ' (' + address.substring(0, 10) + '...)';
                     document.getElementById('connectBtn').disabled = false;
                 });
                 dl.appendChild(div);
@@ -2472,22 +2597,41 @@
                 _el('connectBtn').disabled = true;
             };
 
-            window.onNativeBleConnected = function (deviceName, writeUuid, notifyUuid, charsListJson) {
+            window.onNativeBleConnected = function (deviceName, writeUuid, notifyUuid, charsListJson, scanRssi) {
+                console.log("Native BLE Connected:", deviceName, "write=" + writeUuid, "notify=" + notifyUuid, "rssi=" + scanRssi);
                 isConnected = true;
-                isReadyToSend = writeUuid !== 'none';
-                isReadyToReceive = notifyUuid !== 'none';
 
-                if (charsListJson && charsListJson.length > 0) {
-                    const charSelect = _el('charSelect');
-                    charSelect.innerHTML = '<option value="">Select a characteristic</option>';
-                    charsListJson.forEach(c => {
-                        const option = document.createElement('option');
-                        option.value = c.uuid;
-                        option.textContent = `${c.uuid} (${c.properties.join(', ')})`;
-                        charSelect.appendChild(option);
-                    });
-                    _el('setWriteBtn').disabled = false;
-                    _el('setNotifyBtn').disabled = false;
+                // Immediately update the Range indicator from scan-time RSSI
+                if (scanRssi && scanRssi < 0) {
+                    updateStatusBars({ rssi: scanRssi });
+                }
+
+                // The hardcoded DCU Arduino UUIDs (must match firmware exactly)
+                const DCU_WRITE = '19b10002-e8f2-537e-4f6c-d104768a1214';
+                const DCU_NOTIFY = '19b10001-e8f2-537e-4f6c-d104768a1214';
+
+                // BleManager.java now explicitly assigns them via DCU_WRITE_UUID/DCU_NOTIFY_UUID overrides.
+                // If Java found them correctly, writeUuid/notifyUuid will already contain them.
+                // If not (fallback to other module), we force them here and re-notify the bridge.
+                const finalWriteUuid = (writeUuid && writeUuid.toLowerCase().includes('19b10002')) ? writeUuid : DCU_WRITE;
+                const finalNotifyUuid = (notifyUuid && notifyUuid.toLowerCase().includes('19b10001')) ? notifyUuid : DCU_NOTIFY;
+
+                console.log("Using Write UUID: " + finalWriteUuid);
+                console.log("Using Notify UUID: " + finalNotifyUuid);
+
+                // Tell the Android bridge which characteristics to use
+                if (window.AndroidBLE) {
+                    if (window.AndroidBLE.setWriteCharacteristic) window.AndroidBLE.setWriteCharacteristic(finalWriteUuid);
+                    if (window.AndroidBLE.setNotifyCharacteristic) window.AndroidBLE.setNotifyCharacteristic(finalNotifyUuid);
+                }
+
+                isReadyToSend = true;
+                isReadyToReceive = true;
+
+                // If we have a cached name for the selected device, use it.
+                if (nativeSelectedAddress) {
+                    const cachedName = localStorage.getItem('dcu_ble_name_' + nativeSelectedAddress);
+                    if (cachedName) deviceName = cachedName;
                 }
 
                 _el('connLed').style.color = '#00ffaa';
@@ -2495,22 +2639,22 @@
                 _el('statusLed').style.color = '#00ffaa';
                 _el('statusText').textContent = 'Connected';
                 _el('disconnectBtn').disabled = false;
+                _el('sendBtn').disabled = false;
                 _el('deviceStatus').textContent = deviceName || 'Connected';
+                _el('sendStatus').textContent = 'Status: Ready to send JSON';
+                _el('sendStatus').style.color = '#00ffaa';
+                _el('writeCharText').textContent = finalWriteUuid;
+                _el('writeCharText').style.color = '#00ffaa';
+                _el('receiveStatus').textContent = 'Status: Ready to start receiving';
+                _el('receiveStatus').style.color = '#00ffaa';
+                _el('notifyCharText').textContent = finalNotifyUuid;
+                _el('notifyCharText').style.color = '#00ffaa';
 
-                if (isReadyToSend) {
-                    _el('sendBtn').disabled = false;
-                    _el('sendStatus').textContent = 'Status: Ready to send JSON';
-                    _el('sendStatus').style.color = '#00ffaa';
-                    _el('writeCharText').textContent = writeUuid;
-                    _el('writeCharText').style.color = '#00ffaa';
-                }
-                if (isReadyToReceive) {
-                    _el('receiveStatus').textContent = 'Status: Ready to start receiving';
-                    _el('receiveStatus').style.color = '#00ffaa';
-                    _el('notifyCharText').textContent = notifyUuid;
-                    _el('notifyCharText').style.color = '#00ffaa';
-                }
                 updateStatusBars({ connected: true, deviceName: deviceName || 'Connected' });
+
+                // Start handshake with delay for encryption bond to establish
+                console.log("Starting BLE Handshake in 2s...");
+                setTimeout(sendHandshakeWithRetry, 2000);
             };
 
             window.onNativeBleDisconnected = function () {
@@ -2623,6 +2767,10 @@
         let bytesReceived = 0;
         let bytesSent = 0;
 
+        // BLE Handshake state
+        let handshakeRetryInterval = null;
+        let handshakeAckReceived = false;
+
         // Auto-scroll settings
         let autoScrollReceive = true;
         let autoScrollMotor = true;
@@ -2675,6 +2823,10 @@
         let lastSpeedUpdateTimeMs = 0;
 
         let globalRemainingParams = {};
+
+        // BLE Rename Tracking
+        let lastRenamedBleName = "";
+        let isRenamePending = false;
 
         // ==================== FIREBASE CONFIGURATION ====================
         // ⚠️ REPLACE WITH YOUR FIREBASE PROJECT CONFIG ⚠️
@@ -3222,6 +3374,7 @@
                 const device = await navigator.bluetooth.requestDevice({
                     acceptAllDevices: true,
                     optionalServices: [
+                        '19b10000-e8f2-537e-4f6c-d104768a1214', // Primary DCU Service
                         '0000ffe0-0000-1000-8000-00805f9b34fb',
                         '0000ffe1-0000-1000-8000-00805f9b34fb',
                         '6e400001-b5a3-f393-e0a9-e50e24dcca9e',
@@ -3352,7 +3505,8 @@
                 charSelect.innerHTML = '<option value="">Select a characteristic</option>';
 
                 const knownWriteUUIDs = [
-                    '0000ffe2-0000-1000-8000-00805f9b34fb', // DCU_BLE / Secondary HM-10
+                    '19b10002-e8f2-537e-4f6c-d104768a1214', // Dedicated DCU Write Characteristic
+                    '19b10001-e8f1-537e-4f6c-d104768a1214', // DCU_BLE / Secondary HM-10
                     '0000ffe1-0000-1000-8000-00805f9b34fb', // HM-10
                     '6e400002-b5a3-f393-e0a9-e50e24dcca9e', // Nordic TX
                     '0000fff2-0000-1000-8000-00805f9b34fb', // Common serial
@@ -3360,7 +3514,7 @@
                 ];
 
                 const knownNotifyUUIDs = [
-                    '0000ffe1-0000-1000-8000-00805f9b34fb', // HM-10
+                    '19b10001-e8f2-537e-4f6c-d104768a1214', // Dedicated DCU Notify Characteristic
                     '6e400003-b5a3-f393-e0a9-e50e24dcca9e', // Nordic RX
                     '0000fff1-0000-1000-8000-00805f9b34fb', // Common serial
                     'd973f2e1-b19e-11e2-9e96-0800200c9a66'  // BL652
@@ -3396,10 +3550,10 @@
                         }
 
                         // 2. Fallback to known UUIDs ONLY if properties are incorrectly omitted by module
-                        if (!writeCharacteristic && knownWriteUUIDs.includes(uuid)) {
+                        if (!writeCharacteristic && knownWriteUUIDs.some(u => uuid.includes(u.toLowerCase()))) {
                             writeCharacteristic = char;
                         }
-                        if (!notifyCharacteristic && knownNotifyUUIDs.includes(uuid)) {
+                        if (!notifyCharacteristic && knownNotifyUUIDs.some(u => uuid.includes(u.toLowerCase()))) {
                             notifyCharacteristic = char;
                         }
 
@@ -3440,6 +3594,14 @@
                     console.log("Assigned notify char:", notifyCharacteristic.uuid);
                     // Automatically start receiving
                     setTimeout(startReceiving, 500);
+                }
+
+                // Start connection handshake retry loop
+                console.log("Web: ReadyToSend=" + isReadyToSend + ", ReadyToReceive=" + isReadyToReceive);
+                if (isReadyToSend && isReadyToReceive) {
+                    setTimeout(sendHandshakeWithRetry, 1000);
+                } else {
+                    console.warn("Handshake NOT started: ReadyToSend=" + isReadyToSend + ", ReadyToReceive=" + isReadyToReceive);
                 }
 
             } catch (error) {
@@ -3626,6 +3788,12 @@
                 }
             }
 
+            if (handshakeRetryInterval) {
+                clearInterval(handshakeRetryInterval);
+                handshakeRetryInterval = null;
+            }
+            handshakeAckReceived = false;
+
             isConnected = false;
             isReadyToSend = false;
             isReadyToReceive = false;
@@ -3657,7 +3825,7 @@
             updateStatusBars({ connected: false });
         }
 
-        // ==================== NOTIFICATIONS ====================
+        // ==================== BLE ACTIONS ====================
         async function startReceiving() {
             if (!notifyCharacteristic || !isConnected) return;
 
@@ -3731,6 +3899,22 @@
         }
 
         function processChunk(chunk) {
+            // NEW: Robust check for Handshake ACK in raw stream (handles non-JSON or malformed responses like "ack ok")
+            const lowChunk = chunk.toLowerCase();
+            if (lowChunk.includes("ack ok") || lowChunk.includes("{ack ok}") || lowChunk.includes("ack:ok") || lowChunk.includes('"ack":"ok"')) {
+                console.log("Detected Handshake ACK in raw data stream!");
+                handshakeAckReceived = true;
+                if (handshakeRetryInterval) {
+                    clearInterval(handshakeRetryInterval);
+                    handshakeRetryInterval = null;
+                }
+            } else if (lowChunk.includes('"waiting"') || lowChunk.includes("waiting")) {
+                if (!handshakeAckReceived && isConnected) {
+                    console.log("Firmware is waiting. Sending ble_connected...");
+                    sendJSON({ "cmd": "ble_connected" });
+                }
+            }
+
             for (let i = 0; i < chunk.length; i++) {
                 const char = chunk[i];
 
@@ -3790,12 +3974,57 @@
             try {
                 const jsonData = JSON.parse(jsonStr);
 
+                // Check for Handshake ACK
+                const isAck = (jsonData.ack === 'ok' || jsonData.ack === 'OK') ||
+                    (jsonData.ble_connected === 'ack') ||
+                    (jsonData.ack && String(jsonData.ack).toLowerCase().includes('ok'));
+
+                if (isAck) {
+                    console.log("Handshake ACK received via JSON! Content:", jsonStr);
+                    handshakeAckReceived = true;
+                    if (handshakeRetryInterval) {
+                        console.log("Clearing handshake interval ID:", handshakeRetryInterval);
+                        clearInterval(handshakeRetryInterval);
+                        handshakeRetryInterval = null;
+                    }
+                } else if (jsonData.cmd === 'waiting' || jsonData.status === 'waiting' || (jsonData.ack && String(jsonData.ack).toLowerCase().includes('waiting'))) {
+                    console.log("Handshake waiting state received via JSON. Content:", jsonStr);
+                    if (!handshakeAckReceived && isConnected) {
+                        sendJSON({ "cmd": "ble_connected" });
+                    }
+                }
+
+                // Global SW Version check from any packet
+                let swDisplay = null;
+                if (jsonData.cmd === 'sw_ver' || (jsonData.maj !== undefined && jsonData.min !== undefined)) {
+                    swDisplay = `v${jsonData.maj || 0}.${jsonData.min || 0}.${jsonData.pat || 0}.${jsonData.bld || 0}`;
+                } else {
+                    const swVal = jsonData.sw || jsonData.version || jsonData.sw_version;
+                    if (swVal !== undefined) {
+                        const version = Array.isArray(swVal) ? swVal[0] : swVal;
+                        swDisplay = version.startsWith('v') ? version : `v${version}`;
+                    }
+                }
+
+                if (swDisplay) {
+                    const swTxt = document.getElementById('swVersionText');
+                    if (swTxt) swTxt.textContent = `sw=${swDisplay}`;
+
+                    // NEW: Update Header SW Version
+                    const hdrSw = document.getElementById('hdrSw');
+                    if (hdrSw) hdrSw.textContent = `sw=${swDisplay}`;
+                }
+
                 packetsReceived++;
                 document.getElementById('packetsReceived').textContent = packetsReceived;
                 document.getElementById('globalRcvdCount').textContent = packetsReceived;
                 document.getElementById('totalPacketsReceived').textContent = packetsReceived;
                 // Update bottom status bar Rcvd count
                 _el('bsRcvdCount').textContent = packetsReceived;
+
+                // NEW: Update Header Received count
+                const hdrRcvd = document.getElementById('hdrRcvd');
+                if (hdrRcvd) hdrRcvd.textContent = packetsReceived;
 
                 // Handle CAN status mapping
                 if (jsonData.can_status) {
@@ -3932,12 +4161,28 @@
                 else if (cmd === 'req_bytes' || cmd === 'request_bytes' || cmd === 'byte request' || (cmd && cmd.toLowerCase() === 'sw_updt_data_req') || jsonData.request_bytes !== undefined || (jsonData.bytes !== undefined && jsonData.offset !== undefined)) {
                     handleByteRequest(jsonData);
                 }
+                else if (cmd === 'ble_range') {
+                    // Firmware sends: {"cmd":"ble_range","range":-23.131}
+                    const rssiVal = jsonData.range;
+                    if (rssiVal !== undefined && rssiVal !== null) {
+                        updateStatusBars({ rssi: parseFloat(rssiVal) });
+                    }
+                }
                 else if (cmd === 'config_values') {
                     updateConfigValues(jsonData);
                     document.getElementById('lastCanType').textContent = 'CONFIG';
                     document.getElementById('lastCanTime').textContent = new Date().toLocaleTimeString();
                     writeMessageCount++;
                     document.getElementById('canCount').textContent = `Count: ${writeMessageCount}`;
+                }
+                else if (cmd === 'success' || jsonData.status === 'success') {
+                    console.log("SUCCESS command received! check if rename pending...");
+                    if (isRenamePending) {
+                        handleBleRenameSuccess();
+                    } else {
+                        const statusEl = document.getElementById('bleNameStatus');
+                        if (statusEl) { statusEl.textContent = "Operation Successful ✓"; statusEl.style.color = "#00ffaa"; }
+                    }
                 }
 
                 addToMotorReceivedHistory(jsonData);
@@ -4417,158 +4662,176 @@
             statusMessageCount++;
             let el;
             if ((el = document.getElementById('msgIndicator'))) el.style.color = '#00ffaa';
-            if ((el = document.getElementById('msgStatus'))) el.textContent = '✓ Status Message Received';
+            if ((el = document.getElementById('msgStatus'))) el.textContent = '✓ Status Received';
             if ((el = document.getElementById('msgCount'))) el.textContent = statusMessageCount;
 
             if ((el = document.getElementById('msgPreview'))) {
                 el.value = JSON.stringify(data, null, 2);
-                if (autoScrollMotor) {
-                    el.scrollTop = el.scrollHeight;
-                }
+                if (autoScrollMotor) el.scrollTop = el.scrollHeight;
             }
 
-            // 1. Sliders & Text Values
-            const valueMappings = {
-                'st_MtrSpd': 'st_MtrSpd',
-                'st_ThrotTrq': 'st_ThrotTrq',
-                'st_CtrlrTemp': 'st_CtrlrTemp',
-                'st_MtrTemp': 'st_MtrTemp',
-                'st_PhResultantCurr': 'st_PhResultantCurr',
-                'st_AcCurrMeaRms': 'st_AcCurrMeaRms',
-                'st_DcCurrEstd': 'st_DcCurrEstd',
-                'st_DcBusVolt': 'st_DcBusVolt',
-                'st_ThrotVolt': 'st_ThrotVolt'
+            // ── Normalise: map Arduino short names → canonical field names ──
+            // This lets us handle BOTH "st_CtrlrTemp" (old) and "CtrlTemp" (current arduino)
+            const d = {
+                speed: data.st_MtrSpd ?? data.Speed,
+                torque: data.st_ThrotTrq ?? data.Trq ?? data.Tiq,
+                ctrlTemp: data.st_CtrlrTemp ?? data.CtrlTemp,
+                mtrTemp: data.st_MtrTemp ?? data.MtrTemp,
+                phCurr: data.st_PhResultantCurr ?? data.PhCurr ?? data.PncCurr,
+                acCurr: data.st_AcCurrMeaRms ?? data.AcCurr,
+                dcCurr: data.st_DcCurrEstd ?? data.DcCurr,
+                dcVolt: data.st_DcBusVolt ?? data.DcVolt,
+                thrVolt: data.st_ThrotVolt ?? data.ThrVolt,
+                // Flags
+                fwd: data.st_Forward ?? data.Fwd,
+                rev: data.st_Reverse ?? data.Rev,
+                neut: data.st_Neutral ?? data.Neut,
+                brake: data.st_Brake ?? data.Brake,
+                eco: data.st_EcoBoost ?? data.Eco,
+                hill: data.st_HillholdMode ?? data.Hill,
+                regen: data.st_RegenMode ?? data.Regen,
+                asc: data.st_AscMode ?? data.ASC,
+                pcMode: data.st_PcModeEnable ?? data.PCMode,
+                limp: data.st_LimpHomeMode ?? data.Limp,
+                thrMode: data.st_ThrotMode ?? data.ThrMode,
+                standby: data.st_StandbyState ?? data.Standby,
+                parking: data.st_ParkingState ?? data.ParkState,
+                startStop: data.st_StartStop ?? data.StartStop,
+                motoring: data.st_MotoringState ?? data.Motoring,
+                voltDer: data.st_VoltDerateMode ?? data.VoltDer,
+                dcClamp: data.st_DcClampMode ?? data.DcClamp,
+                mtrTmpDer: data.st_MtrTempDerateMode ?? data.MtrTempDer,
+                ctrTmpDer: data.st_CtrTempDerateMode ?? data.CtrTempDer,
+                autoTune: data.st_AutotuningMode ?? data.AutoTune
             };
 
-            for (const [key, elementId] of Object.entries(valueMappings)) {
-                if (data[key] !== undefined) {
-                    const val = typeof data[key] === 'number' ? data[key] : parseFloat(data[key]);
+            // ── 1. Numeric sliders ──
+            if (d.speed != null) { const v = Math.round(Math.abs(parseFloat(d.speed))); const el = document.getElementById('st_MtrSpd'); if (el) el.textContent = v; }
+            if (d.torque != null) setSliderValue('st_ThrotTrq', parseFloat(d.torque), 300);
+            if (d.ctrlTemp != null) setSliderValue('st_CtrlrTemp', parseFloat(d.ctrlTemp), 150);
+            if (d.mtrTemp != null) setSliderValue('st_MtrTemp', parseFloat(d.mtrTemp), 150);
+            if (d.phCurr != null) setSliderValue('st_PhResultantCurr', parseFloat(d.phCurr), 300);
+            if (d.acCurr != null) setSliderValue('st_AcCurrMeaRms', parseFloat(d.acCurr), 300);
+            if (d.dcCurr != null) setSliderValue('st_DcCurrEstd', parseFloat(d.dcCurr), 300);
+            if (d.dcVolt != null) setSliderValue('st_DcBusVolt', parseFloat(d.dcVolt), 100);
+            if (d.thrVolt != null) setSliderValue('st_ThrotVolt', parseFloat(d.thrVolt), 5);
 
-                    // Update Text
-                    const el = document.getElementById(elementId);
-                    if (el) {
-                        let unit = "";
-                        if (key.includes('Spd')) unit = ' Kmph';
-                        else if (key.includes('Temp')) unit = ' °C';
-                        else if (key.includes('Trq')) unit = ' Nm';
-                        else if (key.includes('Curr')) unit = ' A';
-                        else if (key.includes('Volt')) unit = ' V';
+            // ── 2. Speed → km/h, Distance ──
+            if (d.speed != null) {
+                const rawRpm = Math.round(Math.abs(parseFloat(d.speed)));
+                const gR1 = document.getElementById('input_gearRatio1');
+                const gR2 = document.getElementById('input_gearRatio2');
+                const gCk = document.getElementById('check_gearRatioSelected');
+                let gearRatio = (gR1 && gR2) ? parseFloat(gCk && gCk.checked ? gR2.value : gR1.value) : 10.0;
+                if (isNaN(gearRatio) || gearRatio <= 0) gearRatio = 10.0;
+                const wdEl = document.getElementById('input_wheelDiameterMm');
+                const diam = parseFloat(wdEl ? wdEl.value : 500) || 500;
+                const circ = (diam / 1000) * Math.PI;
+                const speedKmph = (rawRpm / gearRatio) * circ * 60 / 1000;
+                const rsEl = document.getElementById('ui_RealSpeed'); if (rsEl) rsEl.textContent = speedKmph.toFixed(1);
+                const now = Date.now();
+                if (lastSpeedUpdateTimeMs > 0) totalDistanceKm += speedKmph * (now - lastSpeedUpdateTimeMs) / 3600000.0;
+                lastSpeedUpdateTimeMs = now;
+                const distEl = document.getElementById('ui_Distance'); if (distEl) distEl.textContent = totalDistanceKm.toFixed(2);
+            }
 
-                        // Show raw voltage for throttle
-                        let displayVal = val;
-                        // if (key === 'st_ThrotVolt') displayVal = (val / 5.0) * 100;
+            // ── 3. SOC from DC voltage ──
+            if (d.dcVolt != null) {
+                const v = parseFloat(d.dcVolt);
+                let soc = Math.round(((v - 42.0) / (54.0 - 42.0)) * 100);
+                soc = Math.min(100, Math.max(0, soc));
+                const socEl = document.getElementById('ui_SOC'); if (socEl) socEl.textContent = soc;
+            }
 
-                        if (key === 'st_MtrSpd') {
-                            el.textContent = Math.round(Math.abs(val)); // Show raw RPM
-                        } else {
-                            el.textContent = displayVal.toFixed(1) + unit;
-                        }
-                    }
+            // ── 4. State text ──
+            if (d.standby != null) { const el = document.getElementById('ui_StandbyState'); if (el) el.textContent = d.standby === 1 ? 'Standby' : 'Ready'; }
+            if (d.parking != null) {
+                const pk = document.getElementById('ui_StopState');
+                if (pk) { pk.textContent = d.parking === 1 ? 'P' : ''; pk.style.color = d.parking === 1 ? '#ffaa00' : 'transparent'; }
+                const gp = document.getElementById('globalParkingState');
+                if (gp) { gp.textContent = d.parking === 1 ? 'P' : 'OFF'; gp.style.color = d.parking === 1 ? '#ffaa00' : '#8899aa'; }
+            }
 
-                    // Update Slider Width
-                    const slider = document.getElementById('slider_' + elementId);
-                    if (slider) {
-                        let max = 100;
-                        if (key.includes('Temp')) max = 150;
-                        else if (key.includes('Trq')) max = 300;
-                        else if (key.includes('Curr')) max = 300;
-                        else if (key.includes('Volt')) max = 5;
-
-                        const percent = Math.min(100, Math.max(0, (val / max) * 100));
-                        slider.style.width = percent + '%';
-                    }
+            // ── 5. FNR buttons ──
+            const btnF = document.getElementById('fnr_fwd');
+            const btnN = document.getElementById('fnr_neu');
+            const btnR = document.getElementById('fnr_rev');
+            if (btnF && btnN && btnR) {
+                if (d.fwd != null) btnF.className = 'fnr-btn' + (d.fwd === 1 ? ' active' : '');
+                if (d.rev != null) btnR.className = 'fnr-btn' + (d.rev === 1 ? ' active' : '');
+                if (d.neut != null) btnN.className = 'fnr-btn' + (d.neut === 1 ? ' active' : '');
+                // If no explicit Neut field: derive it
+                if (d.neut == null && d.fwd != null && d.rev != null) {
+                    btnN.className = 'fnr-btn' + (d.fwd === 0 && d.rev === 0 ? ' active' : '');
                 }
             }
 
-            // 2. Center Metrics (Speed & SOC/DTT)
-            if (data.st_DcBusVolt !== undefined) {
-                const v = parseFloat(data.st_DcBusVolt);
-                const minV = 42.0; const maxV = 54.0;
-                let soc = Math.round(((v - minV) / (maxV - minV)) * 100);
-                if (soc > 100) soc = 100; if (soc < 0) soc = 0;
-                const socEl = document.getElementById('ui_SOC');
-                if (socEl) socEl.textContent = soc;
-            }
-            if (data.st_MtrSpd !== undefined) {
-                const spd = Math.abs(parseFloat(data.st_MtrSpd));
-                const kmph = Math.round((spd / 12000) * 80);
-                const dtt = Math.round(kmph * 0.5) + 12; // Static estimation for UX
-                const dttEl = document.getElementById('ui_DTT');
-                if (dttEl) dttEl.textContent = dtt;
-                const dttCenEl = document.getElementById('ui_DTT_center');
-                if (dttCenEl) dttCenEl.textContent = dtt.toFixed(1) + ' KM';
-            }
-
-            // 3. Status Badges & Flags
-            // State
-            if (data.st_StandbyState !== undefined) {
-                const el = document.getElementById('ui_StandbyState');
-                if (el) el.textContent = data.st_StandbyState === 1 ? 'Standby' : 'Ready';
-            }
-            if (data.st_ParkingState !== undefined) {
-                const el = document.getElementById('ui_StopState');
-                if (el) {
-                    el.textContent = data.st_ParkingState === 1 ? 'P' : '';
-                    el.style.color = data.st_ParkingState === 1 ? '#ffaa00' : 'transparent';
-                }
-            }
-
-            // FNR (Forward, Neutral, Reverse)
-            if (data.st_Forward !== undefined && data.st_Reverse !== undefined) {
-                const btnF = document.getElementById('fnr_fwd');
-                const btnN = document.getElementById('fnr_neu');
-                const btnR = document.getElementById('fnr_rev');
-                if (btnF && btnN && btnR) {
-                    btnF.className = 'fnr-btn' + (data.st_Forward === 1 ? ' active' : '');
-                    btnR.className = 'fnr-btn' + (data.st_Reverse === 1 ? ' active' : '');
-                    btnN.className = 'fnr-btn' + (data.st_Forward === 0 && data.st_Reverse === 0 ? ' active' : '');
-                }
+            // ── 6. All status flag cards & badges ──
+            // Map: [normalised key, sf-card element suffix, badge element id or null]
+            const flagDefs = [
+                [d.eco, 'st_EcoBoost', 'badge_eco'],
+                [d.limp, 'st_LimpHomeMode', null],
+                [d.brake, 'st_Brake', 'badge_brake'],
+                [d.fwd, 'st_Forward', null],
+                [d.rev, 'st_Reverse', null],
+                [d.neut, 'st_Neutral', null],
+                [d.hill, 'st_HillholdMode', 'badge_hill'],
+                [d.regen, 'st_RegenMode', 'badge_regen'],
+                [d.asc, 'st_AscMode', 'badge_asc'],
+                [d.pcMode, 'st_PcModeEnable', 'badge_pc'],
+                [d.thrMode, 'st_ThrotMode', null],
+                [d.startStop, 'st_StartStop', 'badge_startstop'],
+                [d.parking, 'st_ParkingState', null],
+                [d.standby, 'st_StandbyState', null],
+                [d.motoring, 'st_MotoringState', null],
+                [d.voltDer, 'st_VoltDerateMode', null],
+                [d.dcClamp, 'st_DcClampMode', null],
+                [d.mtrTmpDer, 'st_MtrTempDerateMode', null],
+                [d.ctrTmpDer, 'st_CtrTempDerateMode', null],
+                [d.autoTune, 'st_AutotuningMode', null]
+            ];
+            for (const [val, flagId, badgeId] of flagDefs) {
+                if (val == null) continue;
+                const isOn = val === 1;
+                const flagEl = document.getElementById(flagId);
+                const cardEl = document.getElementById('card_' + flagId);
+                if (flagEl) { flagEl.textContent = isOn ? 'ON' : 'OFF'; flagEl.className = isOn ? 'sf-value sf-on-text' : 'sf-value sf-off-text'; }
+                if (cardEl) cardEl.className = isOn ? 'sf-card sf-on' : 'sf-card sf-off';
+                if (badgeId) { const b = document.getElementById(badgeId); if (b) { if (isOn) b.classList.add('active'); else b.classList.remove('active'); } }
             }
 
-            // Badges
-            const badgeMap = {
-                'st_Brake': 'badge_brake',
-                'st_EcoBoost': 'badge_eco',
-                'st_HillholdMode': 'badge_hill',
-                'st_RegenMode': 'badge_regen',
-                'st_AscMode': 'badge_asc',
-                'st_PcModeEnable': 'badge_pc'
-            };
-            for (const [key, id] of Object.entries(badgeMap)) {
-                if (data[key] !== undefined) {
-                    const el = document.getElementById(id);
-                    if (el) {
-                        if (data[key] === 1) el.classList.add('active');
-                        else el.classList.remove('active');
-                    }
-                }
-            }
-
-            // Start/Stop Special Handling (handles both st_ and raw)
-            const ssVal = data.st_StartStop !== undefined ? data.st_StartStop : data.StartStop;
-            if (ssVal !== undefined) {
-                const bss = document.getElementById('badge_startstop');
-                if (bss) {
-                    if (ssVal === 1) bss.classList.add('active');
-                    else bss.classList.remove('active');
-                }
+            // ── 7. Start/Stop run indicator ──
+            if (d.startStop != null) {
                 const runDot = document.getElementById('runDot');
                 const runTxt = document.getElementById('runStatusText');
                 if (runDot && runTxt) {
-                    runDot.style.color = ssVal === 1 ? '#00ffaa' : '#ff4444';
-                    runTxt.textContent = ssVal === 1 ? 'RUNNING' : 'STOPPED';
-                    runTxt.style.color = ssVal === 1 ? '#00ffaa' : '#ff4444';
+                    runDot.style.color = d.startStop === 1 ? '#00ffaa' : '#ff4444';
+                    runTxt.textContent = d.startStop === 1 ? 'RUNNING' : 'STOPPED';
+                    runTxt.style.color = d.startStop === 1 ? '#00ffaa' : '#ff4444';
                 }
             }
 
-            // 4. Remaining Parameters
+            // ── 8. Derate warnings (DEPRECATED from Active Errors per user request) ──
+            // Derate levels are now treated as Modes/Flags in sf-cards, not blocking errors.
+            // if (d.voltDer === 1) ...
+
+            // ── 9. Remaining unknown params ──
             const knownKeys = [
-                'cmd', 'can_status', 'request_bytes', 'bytes', 'offset', 'status',
+                'cmd', 'can_status', 'request_bytes', 'bytes', 'offset', 'status', 'ack', 'ble_connected',
+                // Long st_ names
                 'st_MtrSpd', 'st_ThrotTrq', 'st_CtrlrTemp', 'st_MtrTemp',
                 'st_PhResultantCurr', 'st_AcCurrMeaRms', 'st_DcCurrEstd', 'st_DcBusVolt', 'st_ThrotVolt',
-                'st_StandbyState', 'st_ParkingState', 'st_Forward', 'st_Reverse', 'st_Neutral',
-                'st_Brake', 'st_EcoBoost', 'st_HillholdMode', 'st_RegenMode', 'st_AscMode', 'st_PcModeEnable',
-                'st_ErrorCode'
+                'st_Forward', 'st_Reverse', 'st_Neutral', 'st_Brake', 'st_EcoBoost', 'st_LimpHomeMode',
+                'st_HillholdMode', 'st_RegenMode', 'st_AscMode', 'st_PcModeEnable', 'st_ThrotMode',
+                'st_StartStop', 'st_ParkingState', 'st_StandbyState', 'st_MotoringState',
+                'st_VoltDerateMode', 'st_DcClampMode', 'st_MtrTempDerateMode', 'st_CtrTempDerateMode', 'st_AutotuningMode',
+                'st_ErrorCode',
+                // Short Arduino names
+                'Speed', 'Trq', 'Tiq', 'CtrlTemp', 'MtrTemp',
+                'PhCurr', 'PncCurr', 'AcCurr', 'DcCurr', 'DcVolt', 'ThrVolt',
+                'Fwd', 'Rev', 'Neut', 'Brake', 'Eco', 'Limp', 'Hill', 'Regen', 'ASC', 'PCMode', 'ThrMode',
+                'StartStop', 'ParkState', 'Standby', 'Motoring',
+                'VoltDer', 'DcClamp', 'MtrTempDer', 'CtrTempDer', 'AutoTune'
             ];
             populateRemainingParams(data, knownKeys);
 
@@ -4578,6 +4841,7 @@
                 if ((el = document.getElementById('msgStatus'))) el.textContent = 'Waiting for status messages';
             }, 1000);
         }
+
 
         // ==================== STATUS 1 & 2 UPDATE LOGIC ====================
         function populateRemainingParams(data, knownKeys) {
@@ -4643,18 +4907,51 @@
             if ((el = document.getElementById('msgStatus'))) el.textContent = '✓ Status 1 Received';
             if ((el = document.getElementById('msgCount'))) el.textContent = statusMessageCount;
 
-            if (data.PhCurr !== undefined) setSliderValue('st_PhResultantCurr', data.PhCurr, 300);
-            if (data.Trq !== undefined) setSliderValue('st_ThrotTrq', data.Trq, 300);
+            // Numeric values
+            if (data.PhCurr !== undefined) setSliderValue('st_PhResultantCurr', parseFloat(data.PhCurr), 300);
+            if (data.PncCurr !== undefined) setSliderValue('st_PhResultantCurr', parseFloat(data.PncCurr), 300);
+            if (data.Tiq !== undefined) setSliderValue('st_ThrotTrq', parseFloat(data.Tiq), 300);
+            if (data.Trq !== undefined) setSliderValue('st_ThrotTrq', parseFloat(data.Trq), 300);
 
-            // Badges & Flags
+            // Badges & Mode Flags (all short-name fields from Arduino status_1)
             if (data.Eco !== undefined) setBadge('badge_eco', data.Eco === 1);
             if (data.Brake !== undefined) setBadge('badge_brake', data.Brake === 1);
             if (data.Hill !== undefined) setBadge('badge_hill', data.Hill === 1);
             if (data.Regen !== undefined) setBadge('badge_regen', data.Regen === 1);
             if (data.ASC !== undefined) setBadge('badge_asc', data.ASC === 1);
+            if (data.PCMode !== undefined) setBadge('badge_pc', data.PCMode === 1);
+
+            // Status flags shown in status card grid
+            const flagMap1 = {
+                'Eco': 'st_EcoBoost',
+                'Limp': 'st_LimpHomeMode',
+                'Brake': 'st_Brake',
+                'Fwd': 'st_Forward',
+                'Rev': 'st_Reverse',
+                'Neut': 'st_Neutral',
+                'Hill': 'st_HillholdMode',
+                'Regen': 'st_RegenMode',
+                'ASC': 'st_AscMode',
+                'PCMode': 'st_PcModeEnable',
+                'ThrMode': 'st_ThrotMode'
+            };
+            for (const [key, flagId] of Object.entries(flagMap1)) {
+                if (data[key] !== undefined) {
+                    const flagEl = document.getElementById(flagId);
+                    const cardEl = document.getElementById('card_' + flagId);
+                    const isOn = data[key] === 1;
+                    if (flagEl) {
+                        flagEl.textContent = isOn ? 'ON' : 'OFF';
+                        flagEl.className = isOn ? 'sf-value sf-on-text' : 'sf-value sf-off-text';
+                    }
+                    if (cardEl) {
+                        cardEl.className = isOn ? 'sf-card sf-on' : 'sf-card sf-off';
+                    }
+                }
+            }
 
             // FNR State
-            if (data.Fwd !== undefined && data.Rev !== undefined && data.Neut !== undefined) {
+            if (data.Fwd !== undefined || data.Rev !== undefined || data.Neut !== undefined) {
                 const btnF = document.getElementById('fnr_fwd');
                 const btnN = document.getElementById('fnr_neu');
                 const btnR = document.getElementById('fnr_rev');
@@ -4665,22 +4962,18 @@
                 }
             }
 
-            const knownKeys1 = ['cmd', 'PhCurr', 'Trq', 'ThrMode', 'Eco', 'Limp', 'Brake', 'Fwd', 'Rev', 'Neut', 'Hill', 'Regen', 'ASC'];
-            populateRemainingParams(data, knownKeys1);
-
-            // Error display logic specifically for this message if it comes here (or fallback to unknown params)
-            let hasErrors = false;
-            let errors = [];
-            if (data.Limp === 1) { errors.push("Limp Home Mode Active"); hasErrors = true; }
-            if (data.ThrMode === 0) { /* Just Throttle mode state tracking if needed */ }
-
-            if (hasErrors) {
+            // Limp home error flag
+            if (data.Limp === 1) {
                 const panel = document.getElementById('parsedErrorCodesPanel');
-                if (panel) {
-                    panel.innerHTML = errors.join('<br>');
-                    panel.style.color = '#ff4444';
-                }
+                if (panel) { panel.innerHTML = '⚠️ Limp Home Mode Active'; panel.style.color = '#ff4444'; }
             }
+
+            const knownKeys1 = [
+                'cmd', 'PhCurr', 'PncCurr', 'Tiq', 'Trq', 'ThrMode',
+                'Eco', 'Limp', 'Brake', 'Fwd', 'Rev', 'Neut',
+                'Hill', 'Regen', 'ASC', 'PCMode'
+            ];
+            populateRemainingParams(data, knownKeys1);
 
             setTimeout(() => {
                 let pEl;
@@ -4696,14 +4989,14 @@
             if ((el = document.getElementById('msgCount'))) el.textContent = statusMessageCount;
 
             // Motor and Electrical Metrics
-            if (data.CtrlTemp !== undefined) setSliderValue('st_CtrlrTemp', data.CtrlTemp, 150);
-            if (data.MtrTemp !== undefined) setSliderValue('st_MtrTemp', data.MtrTemp, 150);
-            if (data.AcCurr !== undefined) setSliderValue('st_AcCurrMeaRms', data.AcCurr, 300);
-            if (data.DcCurr !== undefined) setSliderValue('st_DcCurrEstd', data.DcCurr, 300);
-            if (data.DcVolt !== undefined) setSliderValue('st_DcBusVolt', data.DcVolt, 100);
-            if (data.ThrVolt !== undefined) setSliderValue('st_ThrotVolt', data.ThrVolt, 5); // 0-5V range
+            if (data.CtrlTemp !== undefined) setSliderValue('st_CtrlrTemp', parseFloat(data.CtrlTemp), 150);
+            if (data.MtrTemp !== undefined) setSliderValue('st_MtrTemp', parseFloat(data.MtrTemp), 150);
+            if (data.AcCurr !== undefined) setSliderValue('st_AcCurrMeaRms', parseFloat(data.AcCurr), 300);
+            if (data.DcCurr !== undefined) setSliderValue('st_DcCurrEstd', parseFloat(data.DcCurr), 300);
+            if (data.DcVolt !== undefined) setSliderValue('st_DcBusVolt', parseFloat(data.DcVolt), 100);
+            if (data.ThrVolt !== undefined) setSliderValue('st_ThrotVolt', parseFloat(data.ThrVolt), 5);
 
-            // SOC Calculation based on DC Bus Volt (42V to 54V generic)
+            // SOC Calculation
             if (data.DcVolt !== undefined) {
                 const v = parseFloat(data.DcVolt);
                 const minV = 42.0; const maxV = 54.0;
@@ -4722,10 +5015,7 @@
             if (data.StartStop !== undefined || data.st_StartStop !== undefined) {
                 const ssVal = data.st_StartStop !== undefined ? data.st_StartStop : data.StartStop;
                 const bss = document.getElementById('badge_startstop');
-                if (bss) {
-                    if (ssVal === 1) bss.classList.add('active');
-                    else bss.classList.remove('active');
-                }
+                if (bss) { if (ssVal === 1) bss.classList.add('active'); else bss.classList.remove('active'); }
                 const runDot = document.getElementById('runDot');
                 const runTxt = document.getElementById('runStatusText');
                 if (runDot && runTxt) {
@@ -4736,9 +5026,35 @@
             }
             if (data.ParkState !== undefined) {
                 const pk = document.getElementById('ui_StopState');
-                if (pk) {
-                    pk.textContent = data.ParkState === 1 ? 'P' : '';
-                    pk.style.color = data.ParkState === 1 ? '#ffaa00' : 'transparent';
+                if (pk) { pk.textContent = data.ParkState === 1 ? 'P' : ''; pk.style.color = data.ParkState === 1 ? '#ffaa00' : 'transparent'; }
+                // Also update the global parking indicator
+                const gPark = document.getElementById('globalParkingState');
+                if (gPark) { gPark.textContent = data.ParkState === 1 ? 'P' : 'OFF'; gPark.style.color = data.ParkState === 1 ? '#ffaa00' : '#8899aa'; }
+            }
+
+            // Status flag cards for status_2 flags
+            const flagMap2 = {
+                'PCMode': 'st_PcModeEnable',
+                'StartStop': 'st_StartStop',
+                'ParkState': 'st_ParkingState',
+                'Standby': 'st_StandbyState',
+                'Motoring': 'st_MotoringState',
+                'VoltDer': 'st_VoltDerateMode',
+                'DcClamp': 'st_DcClampMode',
+                'MtrTempDer': 'st_MtrTempDerateMode',
+                'CtrTempDer': 'st_CtrTempDerateMode',
+                'AutoTune': 'st_AutotuningMode'
+            };
+            for (const [key, flagId] of Object.entries(flagMap2)) {
+                if (data[key] !== undefined) {
+                    const flagEl = document.getElementById(flagId);
+                    const cardEl = document.getElementById('card_' + flagId);
+                    const isOn = data[key] === 1;
+                    if (flagEl) {
+                        flagEl.textContent = isOn ? 'ON' : 'OFF';
+                        flagEl.className = isOn ? 'sf-value sf-on-text' : 'sf-value sf-off-text';
+                    }
+                    if (cardEl) { cardEl.className = isOn ? 'sf-card sf-on' : 'sf-card sf-off'; }
                 }
             }
 
@@ -4748,14 +5064,12 @@
                 const rpmEl = document.getElementById('st_MtrSpd');
                 if (rpmEl) rpmEl.textContent = rawRpm;
 
-                // Grab Constants from UI
                 const gearRatioInput1 = document.getElementById('input_gearRatio1');
                 const gearRatioInput2 = document.getElementById('input_gearRatio2');
                 const gearCheckbox = document.getElementById('check_gearRatioSelected');
 
                 let gearRatio = 10.0;
                 if (gearRatioInput1 && gearRatioInput2) {
-                    // Logic: If checkbox is checked we use Ratio 2, otherwise Ratio 1
                     gearRatio = gearCheckbox && gearCheckbox.checked ? parseFloat(gearRatioInput2.value) : parseFloat(gearRatioInput1.value);
                 }
                 if (isNaN(gearRatio) || gearRatio <= 0) gearRatio = 10.0;
@@ -4763,7 +5077,6 @@
                 const wheelDiameterInput = document.getElementById('input_wheelDiameterMm');
                 const wheelDiamMm = parseFloat(wheelDiameterInput ? wheelDiameterInput.value : 500) || 500;
 
-                // Formulas
                 const circMeters = (wheelDiamMm / 1000) * Math.PI;
                 const wheelRpm = rawRpm / gearRatio;
                 const speedKmph = (wheelRpm * circMeters * 60) / 1000;
@@ -4771,7 +5084,6 @@
                 const rsEl = document.getElementById('ui_RealSpeed');
                 if (rsEl) rsEl.textContent = speedKmph.toFixed(1);
 
-                // Distance Integration
                 const now = Date.now();
                 if (lastSpeedUpdateTimeMs > 0) {
                     const dtHours = (now - lastSpeedUpdateTimeMs) / 3600000.0;
@@ -4783,17 +5095,12 @@
                 if (distEl) distEl.textContent = totalDistanceKm.toFixed(2);
             }
 
-            const knownKeys2 = ['cmd', 'PCMode', 'StartStop', 'ParkState', 'Standby', 'Motoring', 'VoltDer', 'DcClamp', 'MtrTempDer', 'CtrTempDer', 'AutoTune', 'CtrlTemp', 'MtrTemp', 'AcCurr', 'DcCurr', 'DcVolt', 'Speed', 'ThrVolt'];
-            populateRemainingParams(data, knownKeys2);
-
-            // Error display logic - append derate warnings to Active Errors only
-            // (Do NOT touch parsedErrorCodesPanel — that's managed by fault/fault_code messages)
+            // Derate warnings in Active Errors section
             let derateWarnings = [];
-            if (data.VoltDer === 1) derateWarnings.push("⚠️ Voltage Derate Active");
-            if (data.DcClamp === 1) derateWarnings.push("⚠️ DC Clamp Active");
-            if (data.MtrTempDer === 1) derateWarnings.push("⚠️ Motor Temp Derate Active");
-            if (data.CtrTempDer === 1) derateWarnings.push("⚠️ Controller Temp Derate Active");
-
+            if (data.VoltDer === 1) derateWarnings.push('⚠️ Voltage Derate Active');
+            if (data.DcClamp === 1) derateWarnings.push('⚠️ DC Clamp Active');
+            if (data.MtrTempDer === 1) derateWarnings.push('⚠️ Motor Temp Derate Active');
+            if (data.CtrTempDer === 1) derateWarnings.push('⚠️ Controller Temp Derate Active');
             if (derateWarnings.length > 0) {
                 const uiErr = document.getElementById('ui_ErrorCode');
                 if (uiErr) {
@@ -4801,7 +5108,6 @@
                     if (current === 'None' || current.trim() === '') {
                         uiErr.innerHTML = derateWarnings.join('<br>');
                     } else {
-                        // Append without duplicating
                         let existing = current.split('<br>');
                         derateWarnings.forEach(w => { if (!existing.includes(w)) existing.push(w); });
                         uiErr.innerHTML = existing.join('<br>');
@@ -4809,6 +5115,14 @@
                     uiErr.style.color = '#ff4444';
                 }
             }
+
+            const knownKeys2 = [
+                'cmd',
+                'PCMode', 'StartStop', 'ParkState', 'Standby', 'Motoring',
+                'VoltDer', 'DcClamp', 'MtrTempDer', 'CtrTempDer', 'AutoTune',
+                'CtrlTemp', 'MtrTemp', 'AcCurr', 'DcCurr', 'DcVolt', 'Speed', 'ThrVolt'
+            ];
+            populateRemainingParams(data, knownKeys2);
 
             setTimeout(() => {
                 let pEl;
@@ -4837,8 +5151,13 @@
                 // Update static write inputs if they exist (sync read -> write)
                 for (let i = 0; i < arr.length; i++) {
                     const writeInp = document.getElementById(`write_${key}_${i}`);
-                    if (writeInp) writeInp.value = arr[i];
+                    if (writeInp) {
+                        writeInp.value = arr[i];
+                        if (i === 0) writeInp.readOnly = true; // Max is primary
+                    }
                 }
+
+                // (swVersionText global update handled at top of processCompleteJson)
 
                 // If it already exists, just update values to avoid losing focus
                 const existingRow = document.getElementById(`cfg_row_${key}`);
@@ -4875,7 +5194,7 @@
 
                 const maxVal = document.createElement('span');
                 maxVal.id = `cfg_max_${key}`;
-                maxVal.style.color = '#00ffaa';
+                maxVal.style.color = '#ff4444';
                 maxVal.style.fontSize = '14px';
                 maxVal.style.width = '40px';
                 maxVal.style.textAlign = 'right';
@@ -5039,21 +5358,6 @@
             "MTR_TMP_OP": "Motor Temp Sensor Open",
             "MTR_TMP_SH": "Motor Temp Sensor Short",
             "MTR_OT": "Motor Over Temperature",
-            "MTR_DRT1": "Motor Derate Level 1",
-            "MTR_DRT2": "Motor Derate Level 2",
-            "MTR_DRT3": "Motor Derate Level 3",
-            "CTR1_TMP_OP": "Controller Temp1 Sensor Open",
-            "CTR1_TMP_SH": "Controller Temp1 Sensor Short",
-            "CTR2_TMP_OP": "Controller Temp2 Sensor Open",
-            "CTR2_TMP_SH": "Controller Temp2 Sensor Short",
-            "CTR_OT": "Controller Over Temperature",
-            "CTR_DRT1": "Controller Derate Level 1",
-            "CTR_DRT2": "Controller Derate Level 2",
-            "CTR_DRT3": "Controller Derate Level 3",
-            "FNR_INV": "Invalid FNR State",
-            "FNR_ILLEGAL": "Illegal Direction Change",
-            "IDLE_STOP": "Idle Stop Active",
-            "CAN_RX": "CAN RX Error",
             "CAN_CRC": "CAN CRC Error"
         };
 
@@ -5103,19 +5407,6 @@
             44: "Encoder Offset Error",
             45: "Encoder PWM Error",
             111: "Configuration Invalid",
-            64: "Motor Derate Level 1",
-            65: "Motor Derate Level 2",
-            66: "Motor Derate Level 3",
-            72: "Controller Temp1 Sensor Open",
-            73: "Controller Temp1 Sensor Short",
-            74: "Controller Temp2 Sensor Open",
-            75: "Controller Temp2 Sensor Short",
-            76: "Controller Over Temperature",
-            77: "Controller Derate Level 1",
-            78: "Controller Derate Level 2",
-            79: "Controller Derate Level 3",
-            85: "Invalid FNR State",
-            86: "Illegal Direction Change",
             129: "Idle Stop Active",
             98: "CAN RX Error",
             99: "CAN CRC Error"
@@ -5214,7 +5505,7 @@
 
             addToErrorHistory(data);
 
-            _el('bsRcvdCount').textContent = errorMessageCount + statusMessageCount + writeMessageCount;
+            // Redundant update removed - handled by processCompleteJson
 
             setTimeout(() => {
                 let el;
@@ -5235,6 +5526,8 @@
                     uiErrorCode.textContent = 'None';
                     uiErrorCode.style.color = '#00ffaa';
                 }
+                const hdrErrBadge = document.getElementById('hdrErrBadge');
+                if (hdrErrBadge) hdrErrBadge.style.display = 'none';
                 return;
             }
 
@@ -5245,6 +5538,12 @@
                 uiErrorCode.innerHTML = activeErrors.map(e => e.meaning).join('<br>');
                 uiErrorCode.style.color = '#ff4444';
             }
+
+            // NEW: Update Header Errors count
+            const hdrErrors = document.getElementById('hdrErrors');
+            if (hdrErrors) hdrErrors.textContent = activeErrors.length;
+            const hdrErrBadge = document.getElementById('hdrErrBadge');
+            if (hdrErrBadge) hdrErrBadge.style.display = 'flex';
 
             list.innerHTML = '';
             activeErrors.forEach(error => {
@@ -5259,16 +5558,149 @@
             });
         }
 
+        // BLE Device Renaming
+        function setBleName() {
+            const nameInput = document.getElementById('newBleNameInput');
+            const name = nameInput.value.trim();
+            const statusEl = document.getElementById('bleNameStatus');
+
+            if (!name) {
+                alert("Please enter a name");
+                return;
+            }
+
+            if (name.length > 20) {
+                alert("Name must be 20 characters or less");
+                return;
+            }
+
+            if (!isConnected) {
+                alert("Connect to the device first to change its name");
+                return;
+            }
+
+            const cmd = {
+                "cmd": "set_ble_name",
+                "name": name
+            };
+
+            console.log("Sending BLE rename command:", cmd);
+            statusEl.textContent = "Sending name change command...";
+            statusEl.style.color = "#ffaa00";
+
+            lastRenamedBleName = name;
+            isRenamePending = true;
+
+            sendJSON(cmd);
+        }
+
+        function handleBleRenameSuccess() {
+            const statusEl = document.getElementById('bleNameStatus');
+            if (statusEl) {
+                statusEl.textContent = "✓ Name change success! Disconnecting...";
+                statusEl.style.color = "#00ffaa";
+            }
+
+            // Save the new name to localStorage to bypass Android's BLE scan cache.
+            if (nativeSelectedAddress) {
+                localStorage.setItem('dcu_ble_name_' + nativeSelectedAddress, lastRenamedBleName);
+
+                // Immediately update display
+                document.getElementById('deviceInfo').textContent = lastRenamedBleName + ' (' + nativeSelectedAddress.substring(0, 10) + '...)';
+                document.getElementById('deviceStatus').textContent = lastRenamedBleName;
+                document.getElementById('bsDeviceName').textContent = lastRenamedBleName;
+            }
+
+            isRenamePending = false;
+
+            // Wait 2 seconds then disconnect and refresh
+            setTimeout(() => {
+                const connTxt = document.getElementById('connStatus');
+                if (connTxt) connTxt.textContent = "Wait... Reconnecting to " + lastRenamedBleName;
+
+                // Native Disconnect
+                if (window.AndroidBLE && window.AndroidBLE.disconnect) {
+                    window.AndroidBLE.disconnect();
+                } else if (gattServer) {
+                    gattServer.disconnect();
+                }
+
+                // Force a page refresh after 2 more seconds to clear state and initiate fresh scan
+                // The user specifically asked to "keep on refreshing page fastly"
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            }, 2000);
+        }
+
+        // ==================== HANDSHAKE RETRY ====================
+        function sendHandshakeWithRetry() {
+            // Reset state
+            handshakeAckReceived = false;
+            if (handshakeRetryInterval) {
+                console.log("Clearing existing handshake interval before restart...");
+                clearInterval(handshakeRetryInterval);
+                handshakeRetryInterval = null;
+            }
+
+            console.log("Starting BLE Handshake Loop...");
+            // alert("Starting Handshake Loop..."); // Optional: Uncomment if console is hard to see
+
+            // Use consistent command
+            const handshakeCmd = { "cmd": "ble_connected" };
+
+            // Send immediately
+            sendJSON(handshakeCmd);
+
+            // Loop indefinitely until ACK is received
+            handshakeRetryInterval = setInterval(() => {
+                if (handshakeAckReceived) {
+                    console.log("Handshake ACK received, stopping loop.");
+                    if (handshakeRetryInterval) {
+                        clearInterval(handshakeRetryInterval);
+                        handshakeRetryInterval = null;
+                    }
+                    return;
+                }
+
+                if (!isConnected) {
+                    console.warn("Disconnected during handshake, stopping loop.");
+                    if (handshakeRetryInterval) {
+                        clearInterval(handshakeRetryInterval);
+                        handshakeRetryInterval = null;
+                    }
+                    return;
+                }
+
+                console.log("Still waiting for ACK... Resending BLE Handshake...");
+                sendJSON(handshakeCmd);
+            }, 1000); // Try more aggressively than before
+        }
+
         // ==================== SEND JSON ====================
-        async function sendJSON() {
+        async function sendJSON(passedData = null) {
             // Android native BLE bridge
             if (isAndroidApp()) {
                 if (!isConnected) {
                     alert('Not connected to any device');
                     return;
                 }
-                const jsonText = document.getElementById('jsonInput').value.trim();
-                if (!jsonText) { alert('No JSON to send'); return; }
+                let jsonText;
+                // If passedData is an Event (from click listener), ignore it and use input value
+                const dataToProcess = (passedData instanceof Event || passedData === null) ? null : passedData;
+
+                if (dataToProcess) {
+                    jsonText = JSON.stringify(dataToProcess);
+                    const inp = document.getElementById('jsonInput');
+                    if (inp) inp.value = jsonText;
+                } else {
+                    const inp = document.getElementById('jsonInput');
+                    jsonText = inp ? inp.value.trim() : "";
+                }
+                if (!jsonText) {
+                    console.warn("No JSON text to send!");
+                    return;
+                }
                 try {
                     const jsonData = JSON.parse(jsonText);
                     document.getElementById('sendBtn').disabled = true;
@@ -5276,22 +5708,28 @@
                     document.getElementById('sendStatus').textContent = 'Sending data...';
                     document.getElementById('sendStatus').style.color = '#ffaa00';
 
-                    console.log("Attempting to send JSON:", jsonText);
-                    if (window.AndroidBLE && window.AndroidBLE.sendDataB64) {
-                        console.log("Using AndroidBLE.sendDataB64");
-                        const bytes = new TextEncoder().encode(jsonText);
-                        let binary = '';
-                        for (let i = 0; i < bytes.byteLength; i++) {
-                            binary += String.fromCharCode(bytes[i]);
+                    console.log("Attempting to send JSON via Native bridge:", jsonText);
+                    try {
+                        if (window.AndroidBLE && window.AndroidBLE.sendDataB64) {
+                            console.log("Using AndroidBLE.sendDataB64...");
+                            const bytes = new TextEncoder().encode(jsonText);
+                            let binary = '';
+                            for (let i = 0; i < bytes.byteLength; i++) {
+                                binary += String.fromCharCode(bytes[i]);
+                            }
+                            const b64 = window.btoa(binary);
+                            window.AndroidBLE.sendDataB64(b64);
+                        } else if (window.AndroidBLE && window.AndroidBLE.sendData) {
+                            console.log("Using AndroidBLE.sendData (fallback)...");
+                            window.AndroidBLE.sendData(jsonText);
+                        } else {
+                            console.warn("AndroidBLE bridge not found!");
+                            throw new Error("AndroidBLE bridge not found");
                         }
-                        const b64 = window.btoa(binary);
-                        window.AndroidBLE.sendDataB64(b64);
-                    } else if (window.AndroidBLE && window.AndroidBLE.sendData) {
-                        console.log("Using AndroidBLE.sendData (fallback)");
-                        window.AndroidBLE.sendData(jsonText);
-                    } else {
-                        console.warn("AndroidBLE bridge not found!");
-                        throw new Error("AndroidBLE bridge not found");
+                    } catch (nativeErr) {
+                        console.error("Native Bridge Send Error:", nativeErr);
+                        alert("Native Send Error: " + nativeErr.message);
+                        throw nativeErr; // Re-throw to hit outer catch
                     }
 
                     packetsSent++;
@@ -5300,6 +5738,10 @@
                     _el('bytesSentCount').textContent = bytesSent;
                     _el('globalSentCount').textContent = packetsSent;
                     _el('bsSentCount').textContent = packetsSent; // Bottom status bar sync
+
+                    // NEW: Update Header Sent count
+                    const hdrSent = document.getElementById('hdrSent');
+                    if (hdrSent) hdrSent.textContent = packetsSent;
 
                     addToSentHistory(jsonData, 'main');
                     addToMotorSentHistory(jsonData);
@@ -5325,7 +5767,13 @@
                 return;
             }
 
-            const jsonText = document.getElementById('jsonInput').value.trim();
+            let jsonText;
+            if (passedData) {
+                jsonText = JSON.stringify(passedData);
+                document.getElementById('jsonInput').value = jsonText;
+            } else {
+                jsonText = document.getElementById('jsonInput').value.trim();
+            }
             if (!jsonText) {
                 alert('No JSON to send');
                 return;
@@ -5370,6 +5818,11 @@
                 document.getElementById('sentCount').textContent = packetsSent;
                 document.getElementById('bytesSentCount').textContent = bytesSent;
                 document.getElementById('globalSentCount').textContent = packetsSent;
+                _el('bsSentCount').textContent = packetsSent; // Bottom status bar sync
+
+                // NEW: Update Header Sent count
+                const hdrSent = document.getElementById('hdrSent');
+                if (hdrSent) hdrSent.textContent = packetsSent;
 
                 addToSentHistory(jsonData, 'main');
                 addToMotorSentHistory(jsonData);
@@ -5793,6 +6246,25 @@
         function sendConfigChunk2() { sendConfigChunk(['spdF', 'Vbatt', 'Thr']); }
         function sendConfigChunk3() { sendConfigChunk(['mtrTmp', 'ctrTmp', 'acc', 'dec']); }
         function sendConfigChunk4() { sendConfigChunk(['ecoSpd', 'ecoAcc', 'ecoPwr']); }
+
+        // Input clamping for config inputs
+        document.addEventListener('input', (e) => {
+            if (e.target.id && e.target.id.startsWith('write_') && !e.target.id.endsWith('_0')) {
+                const idParts = e.target.id.split('_');
+                const key = idParts[1];
+                const maxInp = document.getElementById(`write_${key}_0`);
+                if (maxInp) {
+                    const maxVal = parseFloat(maxInp.value);
+                    const val = parseFloat(e.target.value);
+                    if (!isNaN(maxVal) && val > maxVal) {
+                        e.target.value = maxVal;
+                        // Optional: flash red
+                        e.target.style.background = '#ff4444';
+                        setTimeout(() => e.target.style.background = '#0044cc', 300);
+                    }
+                }
+            }
+        });
 
         function sendFetch() {
             console.log("sendFetch() button clicked");
