@@ -2355,21 +2355,29 @@
                                 </div>
 
                                 <div class="autotune-angle-container"
-                                    style="justify-content: center; margin-bottom: 20px; align-items: center; gap: 40px;">
+                                    style="justify-content: center; margin-bottom: 20px; align-items: center; gap: 30px; flex-wrap: wrap;">
                                     <div style="text-align: center;">
+                                        <div class="angle-circle" id="autotuneTimerCircle"></div>
                                         <div class="angle-value" id="autotuneModeText"
-                                            style="font-size: 16px; font-weight: bold; color: #8899aa; margin-bottom: 10px;">
+                                            style="font-size: 14px; font-weight: bold; color: #8899aa; margin-top: 10px;">
                                             Autotune Mode<br>OFF</div>
                                     </div>
-                                    <div class="angle-circle" id="autotuneTimerCircle"></div>
-                                    <div style="text-align: center;">
-                                        <div style="font-size: 48px;">
-                                            <span class="angle-value" id="autotuneAngle">0</span>
-                                            <span class="angle-unit">°</span>
+
+                                    <div style="display: flex; gap: 20px;">
+                                        <div style="text-align: center; background: rgba(0,210,255,0.1); padding: 15px; border-radius: 12px; border: 1px solid rgba(0,210,255,0.3); min-width: 120px;">
+                                            <div style="color: #00d2ff; font-size: 11px; margin-bottom: 5px; font-weight: bold; letter-spacing: 1px;">MOTOR ANGLE</div>
+                                            <div style="font-size: 32px; font-weight: bold;">
+                                                <span id="at_Motorangle">0</span><span style="font-size: 18px; color: #8899aa; margin-left: 2px;">°</span>
+                                            </div>
                                         </div>
-                                        <div style="color: #8899aa; font-size: 14px; margin-top: 5px;">Offset Angle
+                                        <div style="text-align: center; background: rgba(255,189,3,0.1); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,189,3,0.3); min-width: 120px;">
+                                            <div style="color: #ffbd03; font-size: 11px; margin-bottom: 5px; font-weight: bold; letter-spacing: 1px;">OFFSET ANGLE</div>
+                                            <div style="font-size: 32px; font-weight: bold;">
+                                                <span id="at_Offsetangle">0</span><span style="font-size: 18px; color: #8899aa; margin-left: 2px;">°</span>
+                                            </div>
                                         </div>
                                     </div>
+                                    <span id="autotuneAngle" style="display:none;">0</span> <!-- Legacy fallback -->
                                 </div>
 
                                 <div class="autotune-details" style="display:block;">
@@ -3596,6 +3604,7 @@
                     setTimeout(startReceiving, 500);
                 }
 
+                /*
                 // Start connection handshake retry loop
                 console.log("Web: ReadyToSend=" + isReadyToSend + ", ReadyToReceive=" + isReadyToReceive);
                 if (isReadyToSend && isReadyToReceive) {
@@ -3603,6 +3612,7 @@
                 } else {
                     console.warn("Handshake NOT started: ReadyToSend=" + isReadyToSend + ", ReadyToReceive=" + isReadyToReceive);
                 }
+                */
 
             } catch (error) {
                 console.error('Discover services error:', error);
@@ -3899,6 +3909,7 @@
         }
 
         function processChunk(chunk) {
+            /*
             // NEW: Robust check for Handshake ACK in raw stream (handles non-JSON or malformed responses like "ack ok")
             const lowChunk = chunk.toLowerCase();
             if (lowChunk.includes("ack ok") || lowChunk.includes("{ack ok}") || lowChunk.includes("ack:ok") || lowChunk.includes('"ack":"ok"')) {
@@ -3914,6 +3925,7 @@
                     sendJSON({ "cmd": "ble_connected" });
                 }
             }
+            */
 
             for (let i = 0; i < chunk.length; i++) {
                 const char = chunk[i];
@@ -3974,6 +3986,7 @@
             try {
                 const jsonData = JSON.parse(jsonStr);
 
+                /*
                 // Check for Handshake ACK
                 const isAck = (jsonData.ack === 'ok' || jsonData.ack === 'OK') ||
                     (jsonData.ble_connected === 'ack') ||
@@ -3993,6 +4006,7 @@
                         sendJSON({ "cmd": "ble_connected" });
                     }
                 }
+                */
 
                 // Global SW Version check from any packet
                 let swDisplay = null;
@@ -4027,37 +4041,54 @@
                 if (hdrRcvd) hdrRcvd.textContent = packetsReceived;
 
                 // Handle CAN status mapping
-                if (jsonData.can_status) {
+                const canOnlineStatus = jsonData.st_CANconnect !== undefined ? (jsonData.st_CANconnect == 1) : 
+                                       (jsonData.can_status === 'can_ok' || jsonData.can_status === 'ok' || jsonData.can_status === 'OK');
+                
+                const hasCanLogic = (jsonData.can_status !== undefined || jsonData.st_CANconnect !== undefined);
+
+                if (hasCanLogic) {
                     const canInd = document.getElementById('canIndicator');
                     const canText = document.getElementById('canStatusText');
                     const canDot = _el('canDot');
                     const canBarTxt = _el('canBarText');
 
-                    if (jsonData.can_status === 'can_ok' || jsonData.can_status === 'ok' || jsonData.can_status === 'OK') {
-                        canInd.style.color = '#00ffaa';
-                        canText.textContent = 'CAN: OK';
-                        canText.style.color = '#00ffaa';
-                        canDot.style.color = '#00ffaa';
-                        canBarTxt.textContent = 'CAN: OK';
-                        canBarTxt.style.color = '#00ffaa';
-                    } else if (jsonData.can_status === 'no_can_messages' || jsonData.can_status === 'error') {
-                        canInd.style.color = '#ff4444';
-                        canText.textContent = 'CAN: No Data';
-                        canText.style.color = '#ff4444';
-                        canDot.style.color = '#ff4444';
-                        canBarTxt.textContent = 'CAN: No Data';
-                        canBarTxt.style.color = '#ff4444';
+                    if (canOnlineStatus) {
+                        if (canInd) canInd.style.color = '#00ffaa';
+                        if (canText) {
+                            canText.textContent = 'CAN: OK';
+                            canText.style.color = '#00ffaa';
+                        }
+                        if (canDot) canDot.style.color = '#00ffaa';
+                        if (canBarTxt) {
+                            canBarTxt.textContent = 'CAN: OK';
+                            canBarTxt.style.color = '#00ffaa';
+                        }
+                    } else {
+                        if (canInd) canInd.style.color = '#ff4444';
+                        if (canText) {
+                            canText.textContent = 'CAN: Offline';
+                            canText.style.color = '#ff4444';
+                        }
+                        if (canDot) canDot.style.color = '#ff4444';
+                        if (canBarTxt) {
+                            canBarTxt.textContent = 'CAN: Offline';
+                            canBarTxt.style.color = '#ff4444';
+                        }
                     }
 
                     if (window.canStatusTimeout) clearTimeout(window.canStatusTimeout);
                     window.canStatusTimeout = setTimeout(() => {
-                        canInd.style.color = '#ffaa00';
-                        canText.textContent = 'CAN: Offline';
-                        canText.style.color = '#8899aa';
-                        canDot.style.color = '#ff4444';
-                        canBarTxt.textContent = 'CAN: Offline';
-                        canBarTxt.style.color = '#8899aa';
-                    }, 2000);
+                        if (canInd) canInd.style.color = '#667788';
+                        if (canText) {
+                            canText.textContent = 'CAN: Offline';
+                            canText.style.color = '#8899aa';
+                        }
+                        if (canDot) canDot.style.color = '#ff4444';
+                        if (canBarTxt) {
+                            canBarTxt.textContent = 'CAN: Offline';
+                            canBarTxt.style.color = '#8899aa';
+                        }
+                    }, 5000);
                 }
 
                 // Display in receive tab (if exists)
@@ -4095,8 +4126,13 @@
                     }, 4000);
                 }
 
-                if (cmd === 'status') {
+                // Trigger status update for "status" command OR any "st_" prefixed telemetry
+                const hasStKey = Object.keys(jsonData).some(k => k.startsWith('st_'));
+                if (cmd === 'status' || hasStKey) {
                     updateMotorStatus(jsonData);
+                }
+
+                if (cmd === 'status') {
                     setFirebaseValue('latest_status', jsonData);
                     document.getElementById('lastMsgType').textContent = 'STATUS';
                     document.getElementById('lastCmd').textContent = 'status';
@@ -4245,7 +4281,7 @@
 
         function sendAutotuneCustomCommand() {
             try {
-                const jsonData = { "cmd": "run_autotune" };
+                const jsonData = { "cmd": "at_startrequest" };
                 const jsonText = JSON.stringify(jsonData);
 
                 document.getElementById('jsonInput').value = jsonText;
@@ -4267,27 +4303,45 @@
         }
 
         function updateAutotuneStatus(data) {
-            stopAutotuneTimer();
+            if (data.cmd === 'autotune' || data.cmd === 'autotune_ack' || data.cmd === 'autotune_value' || data.cmd === 'run_autotune' || data.cmd === 'at_startrequest') {
+                
+                // Handle Motor Angle and Offset Angle
+                const mAngle = data.at_Motorangle ?? data.motor_angle ?? 0;
+                const oAngle = data.at_Offsetangle ?? data.offset_angle ?? data.offset_value ?? data.angle ?? 0;
 
-            if (data.status === 'timeout') {
-                document.getElementById('autotuneResultStatus').textContent = 'UNSUCCESSFUL';
-                document.getElementById('autotuneResultStatus').style.color = '#ff4444';
-            } else {
-                document.getElementById('autotuneResultStatus').textContent = 'DONE';
-                document.getElementById('autotuneResultStatus').style.color = '#00ffaa';
+                const elMAngle = document.getElementById('at_Motorangle');
+                if (elMAngle) elMAngle.textContent = mAngle.toFixed(2);
 
-                const angleData = data.offset_angle !== undefined ? data.offset_angle : (data.offset_value !== undefined ? data.offset_value : (data.angle !== undefined ? data.angle : null));
-                if (angleData !== null) {
-                    const angle = parseFloat(angleData);
+                const elOAngle = document.getElementById('at_Offsetangle');
+                const elOAngleLegacy = document.getElementById('autotuneAngle');
+                if (elOAngle) elOAngle.textContent = oAngle.toFixed(2);
+                if (elOAngleLegacy) elOAngleLegacy.textContent = oAngle.toFixed(2);
 
-                    document.getElementById('autotuneAngle').innerHTML = `${angle.toFixed(2)} <span style="font-size: 14px; color: #8899aa;">°</span>`;
+                // Render pie chart for angle on the timer circle
+                const safeAngle = Math.max(0, Math.min(360, oAngle % 360));
+                const circle = document.getElementById('autotuneTimerCircle');
+                if (circle) {
+                    circle.style.background = `conic-gradient(#ffbd03 ${safeAngle}deg, #0a1f3d ${safeAngle}deg)`;
+                }
 
-                    // Render pie chart for angle. Modulo 360 just in case.
-                    const safeAngle = Math.max(0, Math.min(360, angle % 360));
-                    const circle = document.getElementById('autotuneTimerCircle');
+                // Handle autotune mode flag
+                const isTuning = data.at_AutotuneMode == 1 || data.st_AutotuningMode == 1 || data.auto_tune == 1;
+                const textEl = document.getElementById('autotuneModeText');
+                if (textEl) {
+                    textEl.innerHTML = isTuning ? 'Autotune Mode<br>ON' : 'Autotune Mode<br>OFF';
+                    textEl.style.color = isTuning ? '#ffaa00' : '#8899aa';
+                }
+                if (isTuning) startAutotuneTimer();
+                else stopAutotuneTimer();
 
-                    // Draw a pie chart that is filled 'safeAngle' degrees with green
-                    circle.style.background = `conic-gradient(#00ffaa ${safeAngle}deg, #0a0f1e ${safeAngle}deg)`;
+                if (data.status === 'success' || data.status === 'SUCCESS') {
+                    const st = document.getElementById('autotuneResultStatus');
+                    if (st) { st.textContent = 'SUCCESSFUL'; st.style.color = '#00ffaa'; }
+                    stopAutotuneTimer();
+                } else if (data.status === 'failed' || data.status === 'FAILED') {
+                    const st = document.getElementById('autotuneResultStatus');
+                    if (st) { st.textContent = 'UNSUCCESSFUL'; st.style.color = '#ff4444'; }
+                    stopAutotuneTimer();
                 }
             }
         }
@@ -4673,36 +4727,44 @@
             // ── Normalise: map Arduino short names → canonical field names ──
             // This lets us handle BOTH "st_CtrlrTemp" (old) and "CtrlTemp" (current arduino)
             const d = {
-                speed: data.st_MtrSpd ?? data.Speed,
-                torque: data.st_ThrotTrq ?? data.Trq ?? data.Tiq,
-                ctrlTemp: data.st_CtrlrTemp ?? data.CtrlTemp,
-                mtrTemp: data.st_MtrTemp ?? data.MtrTemp,
-                phCurr: data.st_PhResultantCurr ?? data.PhCurr ?? data.PncCurr,
-                acCurr: data.st_AcCurrMeaRms ?? data.AcCurr,
-                dcCurr: data.st_DcCurrEstd ?? data.DcCurr,
-                dcVolt: data.st_DcBusVolt ?? data.DcVolt,
-                thrVolt: data.st_ThrotVolt ?? data.ThrVolt,
+                speed: data.st_mtr_spd ?? data.st_MtrSpd ?? data.mtr_spd ?? data.Speed,
+                torque: data.st_throt_trq ?? data.st_ThrotTrq ?? data.mtr_trq ?? data.Trq ?? data.Tiq,
+                ctrlTemp: data.st_ctrlr_temp ?? data.st_CtrlrTemp ?? data.ctrl_temp ?? data.CtrlTemp,
+                ctrlTemp1: data.st_ctrlr_temp1,
+                ctrlTemp2: data.st_ctrlr_temp2,
+                mtrTemp: data.st_mtr_temp ?? data.st_MtrTemp ?? data.mtr_temp ?? data.MtrTemp,
+                phCurr: data.st_PhResultantCurr ?? data.ph_curr ?? data.PhCurr ?? data.PncCurr,
+                acCurr: data.st_ac_curr_mea_rms ?? data.st_AcCurrMeaRms ?? data.ac_curr ?? data.AcCurr,
+                dcCurr: data.st_dc_curr_estd ?? data.st_DcCurrEstd ?? data.dc_curr ?? data.DcCurr,
+                dcVolt: data.st_dc_bus_volt ?? data.st_DcBusVolt ?? data.dc_bus_volt ?? data.DcVolt,
+                thrVolt: data.st_throt_volt ?? data.st_ThrotVolt ?? data.throt_volt ?? data.ThrVolt,
                 // Flags
-                fwd: data.st_Forward ?? data.Fwd,
-                rev: data.st_Reverse ?? data.Rev,
-                neut: data.st_Neutral ?? data.Neut,
-                brake: data.st_Brake ?? data.Brake,
-                eco: data.st_EcoBoost ?? data.Eco,
-                hill: data.st_HillholdMode ?? data.Hill,
-                regen: data.st_RegenMode ?? data.Regen,
-                asc: data.st_AscMode ?? data.ASC,
-                pcMode: data.st_PcModeEnable ?? data.PCMode,
-                limp: data.st_LimpHomeMode ?? data.Limp,
-                thrMode: data.st_ThrotMode ?? data.ThrMode,
-                standby: data.st_StandbyState ?? data.Standby,
-                parking: data.st_ParkingState ?? data.ParkState,
-                startStop: data.st_StartStop ?? data.StartStop,
-                motoring: data.st_MotoringState ?? data.Motoring,
-                voltDer: data.st_VoltDerateMode ?? data.VoltDer,
-                dcClamp: data.st_DcClampMode ?? data.DcClamp,
-                mtrTmpDer: data.st_MtrTempDerateMode ?? data.MtrTempDer,
-                ctrTmpDer: data.st_CtrTempDerateMode ?? data.CtrTempDer,
-                autoTune: data.st_AutotuningMode ?? data.AutoTune
+                fwd: data.st_forward ?? data.st_Forward ?? data.fwd ?? data.Fwd,
+                rev: data.st_reverse ?? data.st_Reverse ?? data.rev ?? data.Rev,
+                neut: data.st_neutral ?? data.st_Neutral ?? data.neut ?? data.Neut,
+                brake: data.st_brake ?? data.st_Brake ?? data.brake ?? data.Brake,
+                eco: data.st_eco_mode ?? data.st_EcoBoost ?? data.eco ?? data.Eco,
+                boost: data.st_boost_mode,
+                speedMode: data.st_speed_mode,
+                torqueMode: data.st_torque_mode,
+                hill: data.st_hillhold_mode ?? data.st_HillholdMode ?? data.hill ?? data.Hill,
+                regen: data.st_regen_mode ?? data.st_RegenMode ?? data.regen ?? data.Regen,
+                asc: data.st_asc_mode ?? data.st_AscMode ?? data.asc ?? data.ASC,
+                pcMode: data.st_pc_mode_enable ?? data.st_PcModeEnable ?? data.pc_mode ?? data.PCMode,
+                limp: data.st_limp_home_mode ?? data.st_LimpHomeMode ?? data.limp ?? data.Limp,
+                thrMode: data.st_throt_mode ?? data.st_ThrotMode ?? data.thr_mode ?? data.ThrMode,
+                standby: data.st_standby_state ?? data.st_StandbyState ?? data.standby ?? data.Standby,
+                parking: data.st_parking_state ?? data.st_ParkingState ?? data.parking ?? data.ParkState,
+                startStop: data.st_start_stop ?? data.st_StartStop ?? data.start_stop ?? data.StartStop,
+                motoring: data.st_motoring_state ?? data.st_MotoringState ?? data.motoring ?? data.Motoring,
+                sideStand: data.st_side_stand,
+                dcuControl: data.st_dcu_control_mode_status,
+                errorState: data.st_error_state,
+                voltDer: data.st_volt_derate_mode ?? data.st_VoltDerateMode ?? data.volt_der ?? data.VoltDer,
+                dcClamp: data.st_dc_clamp_mode ?? data.st_DcClampMode ?? data.dc_clamp ?? data.DcClamp,
+                mtrTmpDer: data.st_mtr_temp_derate_mode ?? data.st_MtrTempDerateMode ?? data.mtr_temp_der ?? data.MtrTempDer,
+                ctrTmpDer: data.st_ctr_temp_derate_mode ?? data.st_CtrTempDerateMode ?? data.ctr_temp_der ?? data.CtrTempDer,
+                autoTune: data.st_autotuning_mode ?? data.st_AutotuningMode ?? data.auto_tune ?? data.AutoTune
             };
 
             // ── 1. Numeric sliders ──
@@ -4818,7 +4880,15 @@
             // ── 9. Remaining unknown params ──
             const knownKeys = [
                 'cmd', 'can_status', 'request_bytes', 'bytes', 'offset', 'status', 'ack', 'ble_connected',
-                // Long st_ names
+                // Long st_ names (both original and lowercase mapping)
+                'st_mtr_spd', 'st_throt_trq', 'st_ctrlr_temp', 'st_ctrlr_temp1', 'st_ctrlr_temp2', 'st_mtr_temp',
+                'st_dc_bus_volt', 'st_dc_curr_estd', 'st_ac_curr_mea_rms', 'st_throt_volt',
+                'st_forward', 'st_reverse', 'st_neutral', 'st_parking_state', 'st_motoring_state',
+                'st_standby_state', 'st_start_stop', 'st_side_stand', 'st_throt_mode', 'st_dcu_control_mode_status',
+                'st_pc_mode_enable', 'st_eco_mode', 'st_boost_mode', 'st_speed_mode', 'st_torque_mode',
+                'st_limp_home_mode', 'st_brake', 'st_hillhold_mode', 'st_regen_mode', 'st_asc_mode',
+                'st_error_state', 'st_volt_derate_mode', 'st_dc_clamp_mode', 'st_mtr_temp_derate_mode',
+                'st_ctr_temp_derate_mode', 'st_autotuning_mode', 'st_CANconnect', 'st_PhResultantCurr',
                 'st_MtrSpd', 'st_ThrotTrq', 'st_CtrlrTemp', 'st_MtrTemp',
                 'st_PhResultantCurr', 'st_AcCurrMeaRms', 'st_DcCurrEstd', 'st_DcBusVolt', 'st_ThrotVolt',
                 'st_Forward', 'st_Reverse', 'st_Neutral', 'st_Brake', 'st_EcoBoost', 'st_LimpHomeMode',
@@ -5634,6 +5704,7 @@
         }
 
         // ==================== HANDSHAKE RETRY ====================
+        /*
         function sendHandshakeWithRetry() {
             // Reset state
             handshakeAckReceived = false;
@@ -5676,6 +5747,7 @@
                 sendJSON(handshakeCmd);
             }, 1000); // Try more aggressively than before
         }
+        */
 
         // ==================== SEND JSON ====================
         async function sendJSON(passedData = null) {
