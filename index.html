@@ -2364,16 +2364,24 @@
                                     </div>
 
                                     <div style="display: flex; gap: 20px;">
-                                        <div style="text-align: center; background: rgba(0,210,255,0.1); padding: 15px; border-radius: 12px; border: 1px solid rgba(0,210,255,0.3); min-width: 120px;">
-                                            <div style="color: #00d2ff; font-size: 11px; margin-bottom: 5px; font-weight: bold; letter-spacing: 1px;">MOTOR ANGLE</div>
+                                        <div
+                                            style="text-align: center; background: rgba(0,210,255,0.1); padding: 15px; border-radius: 12px; border: 1px solid rgba(0,210,255,0.3); min-width: 120px;">
+                                            <div
+                                                style="color: #00d2ff; font-size: 11px; margin-bottom: 5px; font-weight: bold; letter-spacing: 1px;">
+                                                MOTOR ANGLE</div>
                                             <div style="font-size: 32px; font-weight: bold;">
-                                                <span id="at_Motorangle">0</span><span style="font-size: 18px; color: #8899aa; margin-left: 2px;">°</span>
+                                                <span id="at_Motorangle">0</span><span
+                                                    style="font-size: 18px; color: #8899aa; margin-left: 2px;">°</span>
                                             </div>
                                         </div>
-                                        <div style="text-align: center; background: rgba(255,189,3,0.1); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,189,3,0.3); min-width: 120px;">
-                                            <div style="color: #ffbd03; font-size: 11px; margin-bottom: 5px; font-weight: bold; letter-spacing: 1px;">OFFSET ANGLE</div>
+                                        <div
+                                            style="text-align: center; background: rgba(255,189,3,0.1); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,189,3,0.3); min-width: 120px;">
+                                            <div
+                                                style="color: #ffbd03; font-size: 11px; margin-bottom: 5px; font-weight: bold; letter-spacing: 1px;">
+                                                OFFSET ANGLE</div>
                                             <div style="font-size: 32px; font-weight: bold;">
-                                                <span id="at_Offsetangle">0</span><span style="font-size: 18px; color: #8899aa; margin-left: 2px;">°</span>
+                                                <span id="at_Offsetangle">0</span><span
+                                                    style="font-size: 18px; color: #8899aa; margin-left: 2px;">°</span>
                                             </div>
                                         </div>
                                     </div>
@@ -2474,7 +2482,31 @@
         // all BLE operations through the native Java bridge (window.AndroidBLE)
         // instead of the Web Bluetooth API (navigator.bluetooth).
         // NOTE: Must be a function (not const) to handle WebView injection timing
-        function isAndroidApp() { return typeof window.AndroidBLE !== 'undefined'; }
+        // Generalized Native Bridge detection (Android, Flutter, etc.)
+        function isNativeApp() {
+            return (typeof window.AndroidBLE !== 'undefined') || 
+                   (typeof window.FlutterBLE !== 'undefined') || 
+                   (window.flutter_inappwebview && typeof window.flutter_inappwebview.callHandler === 'function');
+        }
+
+        // Pointer to the active native bridge
+        function getNativeBridge() {
+            if (typeof window.AndroidBLE !== 'undefined') return window.AndroidBLE;
+            if (typeof window.FlutterBLE !== 'undefined') return window.FlutterBLE;
+            if (window.flutter_inappwebview) {
+                return {
+                    startScan: () => window.flutter_inappwebview.callHandler('startScan'),
+                    stopScan: () => window.flutter_inappwebview.callHandler('stopScan'),
+                    connect: (addr) => window.flutter_inappwebview.callHandler('connect', addr),
+                    disconnect: () => window.flutter_inappwebview.callHandler('disconnect'),
+                    sendData: (data) => window.flutter_inappwebview.callHandler('sendData', data),
+                    setWriteCharacteristic: (uuid) => window.flutter_inappwebview.callHandler('setWriteCharacteristic', uuid),
+                    setNotifyCharacteristic: (uuid) => window.flutter_inappwebview.callHandler('setNotifyCharacteristic', uuid),
+                    isAvailable: () => true // Assume true if the bridge is present
+                };
+            }
+            return null;
+        }
 
         // Global null-safe getElementById helper:
         // Returns the actual element if found, or a dummy object to prevent crashes.
@@ -2542,218 +2574,171 @@
             updateStatusBars({ rssi: rssi });
         };
 
-
-        let nativeBleDevices = {}; // address -> {name, rssi}
+        let nativeBleDevices = {};
         let nativeSelectedAddress = null;
 
-        if (isAndroidApp()) {
-            console.log('✅ Android BLE bridge detected. Using native Bluetooth.');
+        window.onNativeBleScanStarted = function () {
+            isScanning = true;
+            const el = document.getElementById('scanBtn');
+            if (el) el.disabled = true;
+            nativeBleDevices = {};
+            const dl = document.getElementById('deviceList');
+            if (dl) dl.innerHTML = '<div style="color: #ffaa00; text-align: center; padding: 20px;">Scanning for devices...</div>';
+        };
 
-            // ---- Callback handlers called by native Java (BleManager.java) ----
-
-            window.onNativeBleScanStarted = function () {
-                isScanning = true;
-                const el = document.getElementById('scanBtn');
-                if (el) el.disabled = true;
-                nativeBleDevices = {};
+        window.onNativeBleScanStopped = function () {
+            isScanning = false;
+            const el = document.getElementById('scanBtn');
+            if (el) el.disabled = false;
+            if (Object.keys(nativeBleDevices).length === 0) {
                 const dl = document.getElementById('deviceList');
-                if (dl) dl.innerHTML = '<div style="color: #ffaa00; text-align: center; padding: 20px;">Scanning for devices...</div>';
-            };
+                if (dl) dl.innerHTML = '<div style="color: #8899aa; text-align: center; padding: 20px;">No devices found. Try again.</div>';
+            }
+        };
 
-            window.onNativeBleScanStopped = function () {
-                isScanning = false;
-                const el = document.getElementById('scanBtn');
-                if (el) el.disabled = false;
-                if (Object.keys(nativeBleDevices).length === 0) {
-                    const dl = document.getElementById('deviceList');
-                    if (dl) dl.innerHTML = '<div style="color: #8899aa; text-align: center; padding: 20px;">No devices found. Try again.</div>';
-                }
-            };
+        window.onNativeBleDeviceFound = function (name, address, rssi) {
+            if (nativeBleDevices[address]) return;
+            const cachedName = localStorage.getItem('dcu_ble_name_' + address);
+            if (cachedName) name = cachedName;
+            nativeBleDevices[address] = { name: name, rssi: rssi };
+            const dl = document.getElementById('deviceList');
+            if (!dl) return;
+            if (Object.keys(nativeBleDevices).length === 1) dl.innerHTML = '';
+            const div = document.createElement('div');
+            div.className = 'device-item';
+            div.innerHTML = '<div class="device-name">' + name + '</div>' +
+                '<div class="device-address">' + address + ' (RSSI: ' + rssi + ')</div>';
+            div.addEventListener('click', function () {
+                document.querySelectorAll('.device-item').forEach(function (el) { el.classList.remove('selected'); });
+                div.classList.add('selected');
+                nativeSelectedAddress = address;
+                document.getElementById('deviceInfo').textContent = name + ' (' + address.substring(0, 10) + '...)';
+                document.getElementById('connectBtn').disabled = false;
+            });
+            dl.appendChild(div);
+        };
 
-            window.onNativeBleDeviceFound = function (name, address, rssi) {
-                if (nativeBleDevices[address]) return; // Skip duplicates
+        window.onNativeBleConnecting = function () {
+            const cl = _el('connLed'); if (cl) cl.style.color = '#ffaa00';
+            const cs = _el('connStatus'); if (cs) cs.textContent = 'Connecting...';
+            const cb = _el('connectBtn'); if (cb) cb.disabled = true;
+        };
 
-                // Override with our custom renamed name if it exists in local storage
-                const cachedName = localStorage.getItem('dcu_ble_name_' + address);
-                if (cachedName) name = cachedName;
+        window.onNativeBleConnected = function (deviceName, writeUuid, notifyUuid, charsListJson, scanRssi) {
+            isConnected = true;
+            if (scanRssi && scanRssi < 0) updateStatusBars({ rssi: scanRssi });
 
-                nativeBleDevices[address] = { name: name, rssi: rssi };
+            const DCU_WRITE = '19b10002-e8f2-537e-4f6c-d104768a1214';
+            const DCU_NOTIFY = '19b10001-e8f2-537e-4f6c-d104768a1214';
+            const finalWriteUuid = (writeUuid && writeUuid.toLowerCase().includes('19b10002')) ? writeUuid : DCU_WRITE;
+            const finalNotifyUuid = (notifyUuid && notifyUuid.toLowerCase().includes('19b10001')) ? notifyUuid : DCU_NOTIFY;
 
-                const dl = document.getElementById('deviceList');
-                if (!dl) return;
+            const bridge = getNativeBridge();
+            if (bridge) {
+                if (typeof bridge.setWriteCharacteristic === 'function') bridge.setWriteCharacteristic(finalWriteUuid);
+                if (typeof bridge.setNotifyCharacteristic === 'function') bridge.setNotifyCharacteristic(finalNotifyUuid);
+            }
 
-                // Remove the "scanning..." placeholder on first device
-                if (Object.keys(nativeBleDevices).length === 1) dl.innerHTML = '';
+            isReadyToSend = true;
+            isReadyToReceive = true;
+            if (nativeSelectedAddress) {
+                const cachedName = localStorage.getItem('dcu_ble_name_' + nativeSelectedAddress);
+                if (cachedName) deviceName = cachedName;
+            }
 
-                const div = document.createElement('div');
-                div.className = 'device-item';
-                div.innerHTML = '<div class="device-name">' + name + '</div>' +
-                    '<div class="device-address">' + address + ' (RSSI: ' + rssi + ')</div>';
-                div.addEventListener('click', function () {
-                    document.querySelectorAll('.device-item').forEach(function (el) { el.classList.remove('selected'); });
-                    div.classList.add('selected');
-                    nativeSelectedAddress = address;
-                    document.getElementById('deviceInfo').textContent = name + ' (' + address.substring(0, 10) + '...)';
-                    document.getElementById('connectBtn').disabled = false;
-                });
-                dl.appendChild(div);
-            };
+            _el('connLed').style.color = '#00ffaa';
+            _el('connStatus').textContent = 'Connected';
+            _el('statusLed').style.color = '#00ffaa';
+            _el('statusText').textContent = 'Connected';
+            _el('disconnectBtn').disabled = false;
+            _el('sendBtn').disabled = false;
+            _el('deviceStatus').textContent = deviceName || 'Connected';
+            _el('sendStatus').textContent = 'Status: Ready to send JSON';
+            _el('sendStatus').style.color = '#00ffaa';
+            _el('receiveStatus').textContent = 'Status: Ready to start receiving';
+            _el('receiveStatus').style.color = '#00ffaa';
 
-            window.onNativeBleConnecting = function () {
-                _el('connLed').style.color = '#ffaa00';
-                _el('connStatus').textContent = 'Connecting...';
-                _el('connectBtn').disabled = true;
-            };
+            updateStatusBars({ connected: true, deviceName: deviceName || 'Connected' });
+            setTimeout(sendHandshakeWithRetry, 2000);
+        };
 
-            window.onNativeBleConnected = function (deviceName, writeUuid, notifyUuid, charsListJson, scanRssi) {
-                console.log("Native BLE Connected:", deviceName, "write=" + writeUuid, "notify=" + notifyUuid, "rssi=" + scanRssi);
-                isConnected = true;
+        window.onNativeBleDisconnected = function () {
+            isConnected = false;
+            isReadyToSend = false;
+            isReadyToReceive = false;
+            isReceiving = false;
+            _el('connLed').style.color = '#ff4444';
+            _el('connStatus').textContent = 'Disconnected';
+            _el('statusLed').style.color = '#ff4444';
+            _el('statusText').textContent = 'Disconnected';
+            _el('connectBtn').disabled = false;
+            _el('disconnectBtn').disabled = true;
+            _el('sendBtn').disabled = true;
+            _el('sendStatus').textContent = 'Status: Not ready - disconnected';
+            _el('sendStatus').style.color = '#ff4444';
+            _el('receiveStatus').textContent = 'Status: Not ready - disconnected';
+            _el('receiveStatus').style.color = '#ff4444';
+            _el('deviceStatus').textContent = 'No device';
+            updateStatusBars({ connected: false });
+        };
 
-                // Immediately update the Range indicator from scan-time RSSI
-                if (scanRssi && scanRssi < 0) {
-                    updateStatusBars({ rssi: scanRssi });
-                }
+        window.onNativeBleNotifyStarted = function () {
+            isReceiving = true;
+            _el('receiveStatus').textContent = 'Status: Receiving data...';
+            _el('receiveStatus').style.color = '#ffaa00';
+        };
 
-                // The hardcoded DCU Arduino UUIDs (must match firmware exactly)
-                const DCU_WRITE = '19b10002-e8f2-537e-4f6c-d104768a1214';
-                const DCU_NOTIFY = '19b10001-e8f2-537e-4f6c-d104768a1214';
-
-                // BleManager.java now explicitly assigns them via DCU_WRITE_UUID/DCU_NOTIFY_UUID overrides.
-                // If Java found them correctly, writeUuid/notifyUuid will already contain them.
-                // If not (fallback to other module), we force them here and re-notify the bridge.
-                const finalWriteUuid = (writeUuid && writeUuid.toLowerCase().includes('19b10002')) ? writeUuid : DCU_WRITE;
-                const finalNotifyUuid = (notifyUuid && notifyUuid.toLowerCase().includes('19b10001')) ? notifyUuid : DCU_NOTIFY;
-
-                console.log("Using Write UUID: " + finalWriteUuid);
-                console.log("Using Notify UUID: " + finalNotifyUuid);
-
-                // Tell the Android bridge which characteristics to use
-                if (window.AndroidBLE) {
-                    if (window.AndroidBLE.setWriteCharacteristic) window.AndroidBLE.setWriteCharacteristic(finalWriteUuid);
-                    if (window.AndroidBLE.setNotifyCharacteristic) window.AndroidBLE.setNotifyCharacteristic(finalNotifyUuid);
-                }
-
+        window.onNativeBleWriteSet = function (success, uuid) {
+            if (success) {
                 isReadyToSend = true;
-                isReadyToReceive = true;
-
-                // If we have a cached name for the selected device, use it.
-                if (nativeSelectedAddress) {
-                    const cachedName = localStorage.getItem('dcu_ble_name_' + nativeSelectedAddress);
-                    if (cachedName) deviceName = cachedName;
-                }
-
-                _el('connLed').style.color = '#00ffaa';
-                _el('connStatus').textContent = 'Connected';
-                _el('statusLed').style.color = '#00ffaa';
-                _el('statusText').textContent = 'Connected';
-                _el('disconnectBtn').disabled = false;
                 _el('sendBtn').disabled = false;
-                _el('deviceStatus').textContent = deviceName || 'Connected';
                 _el('sendStatus').textContent = 'Status: Ready to send JSON';
                 _el('sendStatus').style.color = '#00ffaa';
-                _el('writeCharText').textContent = finalWriteUuid;
-                _el('writeCharText').style.color = '#00ffaa';
+            } else {
+                console.warn('Bridge failed to set Write Characteristic');
+            }
+        };
+
+        window.onNativeBleNotifySet = function (success, uuid) {
+            if (success) {
+                isReadyToReceive = true;
                 _el('receiveStatus').textContent = 'Status: Ready to start receiving';
                 _el('receiveStatus').style.color = '#00ffaa';
-                _el('notifyCharText').textContent = finalNotifyUuid;
-                _el('notifyCharText').style.color = '#00ffaa';
+            } else {
+                console.warn('Bridge failed to set Notify Characteristic');
+            }
+        };
 
-                updateStatusBars({ connected: true, deviceName: deviceName || 'Connected' });
+        window.onNativeBleData = function (chunk) {
+            bytesReceived += chunk.length;
+            const br = document.getElementById('bytesReceived'); if (br) br.textContent = bytesReceived;
+            const tbr = document.getElementById('totalBytesReceived'); if (tbr) tbr.textContent = bytesReceived;
+            const lr = document.getElementById('lastReceived'); if (lr) lr.textContent = new Date().toLocaleTimeString();
+            if (typeof processChunk === 'function') processChunk(chunk);
+        }
 
-                // Start handshake with delay for encryption bond to establish
-                console.log("Starting BLE Handshake in 2s...");
-                setTimeout(sendHandshakeWithRetry, 2000);
-            };
+        const td = new TextDecoder();
+        window.onNativeBleDataB64 = function (b64) {
+            const binary = atob(b64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            const chunk = td.decode(bytes);
+            if (typeof processChunk === 'function') processChunk(chunk);
+        };
 
-            window.onNativeBleDisconnected = function () {
-                isConnected = false;
-                isReadyToSend = false;
-                isReadyToReceive = false;
-                isReceiving = false;
+        window.onNativeBleWriteComplete = function (success) {
+            if (!success) console.warn('Native BLE write failed');
+        };
 
-                _el('connLed').style.color = '#ff4444';
-                _el('connStatus').textContent = 'Disconnected';
-                _el('statusLed').style.color = '#ff4444';
-                _el('statusText').textContent = 'Disconnected';
-                _el('connectBtn').disabled = false;
-                _el('disconnectBtn').disabled = true;
-                _el('sendBtn').disabled = true;
-                _el('sendStatus').textContent = 'Status: Not ready - disconnected';
-                _el('sendStatus').style.color = '#ff4444';
-                _el('receiveStatus').textContent = 'Status: Not ready - disconnected';
-                _el('receiveStatus').style.color = '#ff4444';
-                _el('deviceStatus').textContent = 'No device';
-                updateStatusBars({ connected: false });
-            };
+        window.onNativeBleError = function (message) {
+            console.error('Native BLE Error:', message);
+            alert('BLE Error: ' + message);
+            const el = document.getElementById('scanBtn');
+            if (el) el.disabled = false;
+        };
 
-            window.onNativeBleNotifyStarted = function () {
-                isReceiving = true;
-                _el('receiveStatus').textContent = 'Status: Receiving data...';
-                _el('receiveStatus').style.color = '#ffaa00';
-            };
-
-            window.onNativeBleWriteSet = function (success, uuid) {
-                if (success) {
-                    isReadyToSend = true;
-                    _el('sendBtn').disabled = false;
-                    _el('sendStatus').textContent = 'Status: Ready to send JSON';
-                    _el('sendStatus').style.color = '#00ffaa';
-                    _el('writeCharText').textContent = uuid;
-                    _el('writeCharText').style.color = '#00ffaa';
-                } else {
-                    alert('Android failed to set Write Characteristic');
-                }
-            };
-
-            window.onNativeBleNotifySet = function (success, uuid) {
-                if (success) {
-                    isReadyToReceive = true;
-                    _el('receiveStatus').textContent = 'Status: Ready to start receiving';
-                    _el('receiveStatus').style.color = '#00ffaa';
-                    _el('notifyCharText').textContent = uuid;
-                    _el('notifyCharText').style.color = '#00ffaa';
-                } else {
-                    alert('Android failed to set Notify Characteristic');
-                }
-            };
-
-            window.onNativeBleData = function (chunk) {
-                // Feed data into the existing chunked JSON handler
-                bytesReceived += chunk.length;
-                var brEl = document.getElementById('bytesReceived');
-                if (brEl) brEl.textContent = bytesReceived;
-                var tbrEl = document.getElementById('totalBytesReceived');
-                if (tbrEl) tbrEl.textContent = bytesReceived;
-                var lrEl = document.getElementById('lastReceived');
-                if (lrEl) lrEl.textContent = new Date().toLocaleTimeString();
-
-                // Use the existing processChunk function
-                if (typeof processChunk === 'function') {
-                    processChunk(chunk);
-                }
-            };
-
-            window.onNativeBleDataB64 = function (b64) {
-                const binary_string = window.atob(b64);
-                const len = binary_string.length;
-                const bytes = new Uint8Array(len);
-                for (let i = 0; i < len; i++) {
-                    bytes[i] = binary_string.charCodeAt(i);
-                }
-                const chunk = new TextDecoder('utf-8').decode(bytes);
-                window.onNativeBleData(chunk);
-            };
-
-            window.onNativeBleWriteComplete = function (success) {
-                if (!success) console.warn('Native BLE write failed');
-            };
-
-            window.onNativeBleError = function (message) {
-                console.error('Native BLE Error:', message);
-                alert('BLE Error: ' + message);
-                const el = document.getElementById('scanBtn');
-                if (el) el.disabled = false;
-            };
+        if (isNativeApp()) {
+            console.log('✅ Native BLE bridge recognized.');
         }
         // ==================== END ANDROID BLE SHIM ====================
 
@@ -2784,10 +2769,11 @@
         let autoScrollMotor = true;
         let autoScrollError = true;
 
-        // ===== CHUNKED JSON HANDLING =====
-        let jsonBuffer = "";
+        // ===== CHUNKED JSON HANDLING (OPTIMIZED FOR 1ms) =====
+        let jsonBufferArray = [];
         let braceCount = 0;
         let inJsonObject = false;
+        let lastReceivedStatusTime = 0;
 
         // History arrays
         let sentHistory = [];
@@ -3310,11 +3296,12 @@
         }
 
         function checkBluetoothAvailability() {
-            // Android native BLE bridge
-            if (isAndroidApp()) {
-                const avail = window.AndroidBLE.isAvailable();
+            if (isNativeApp()) {
+                const bridge = getNativeBridge();
+                // If it's a native app and we found a bridge, we assume BT is ready or the bridge will handle permission requests.
+                const avail = bridge ? (typeof bridge.isAvailable === 'function' ? bridge.isAvailable() : true) : true;
                 document.getElementById('btIndicator').style.color = avail ? '#00ffaa' : '#ffaa00';
-                document.getElementById('btText').textContent = avail ? 'Bluetooth Ready (Native)' : 'Enable Bluetooth in Settings';
+                document.getElementById('btText').textContent = avail ? 'Bluetooth Ready (Native)' : 'Bluetooth Status Check...';
                 document.getElementById('btText').style.color = avail ? '#00ffaa' : '#ffaa00';
                 document.getElementById('scanBtn').disabled = !avail;
                 return;
@@ -3362,9 +3349,19 @@
 
         // ==================== BLUETOOTH FUNCTIONS ====================
         async function startScan() {
-            // Android native BLE bridge
-            if (isAndroidApp()) {
-                window.AndroidBLE.startScan();
+            if (isNativeApp()) {
+                const bridge = getNativeBridge();
+                console.log('Starting native scan via bridge...');
+                if (bridge) {
+                    try {
+                        bridge.startScan();
+                    } catch (e) {
+                        console.error('Native scan start failed:', e);
+                        alert('Error starting scan: ' + e.message);
+                    }
+                } else {
+                    alert('Error: Native bridge detected but not initialized.');
+                }
                 return;
             }
 
@@ -3629,8 +3626,9 @@
                 return;
             }
 
-            if (isAndroidApp()) {
-                window.AndroidBLE.setWriteCharacteristic(uuid);
+            if (isNativeApp()) {
+                const bridge = getNativeBridge();
+                if (bridge) bridge.setWriteCharacteristic(uuid);
                 return;
             }
 
@@ -3654,8 +3652,9 @@
                 return;
             }
 
-            if (isAndroidApp()) {
-                window.AndroidBLE.setNotifyCharacteristic(uuid);
+            if (isNativeApp()) {
+                const bridge = getNativeBridge();
+                if (bridge) bridge.setNotifyCharacteristic(uuid);
                 return;
             }
 
@@ -3686,12 +3685,13 @@
 
         async function connect() {
             // Android native BLE bridge
-            if (isAndroidApp()) {
+            if (isNativeApp()) {
                 if (!nativeSelectedAddress) {
                     alert('Please select a device first');
                     return;
                 }
-                window.AndroidBLE.connect(nativeSelectedAddress);
+                const bridge = getNativeBridge();
+                if (bridge) bridge.connect(nativeSelectedAddress);
                 return;
             }
 
@@ -3782,8 +3782,9 @@
 
         async function disconnect() {
             // Android native BLE bridge
-            if (isAndroidApp()) {
-                window.AndroidBLE.disconnect();
+            if (isNativeApp()) {
+                const bridge = getNativeBridge();
+                if (bridge) bridge.disconnect();
                 return;
             }
 
@@ -3927,27 +3928,22 @@
             }
             */
 
+            jsonBufferArray.push(chunk);
             for (let i = 0; i < chunk.length; i++) {
                 const char = chunk[i];
-
                 if (char === '{') {
-                    if (braceCount === 0) {
-                        jsonBuffer = ""; // Discard leading garbage
+                    if (!inJsonObject) {
                         inJsonObject = true;
+                        braceCount = 1;
+                    } else {
+                        braceCount++;
                     }
-                    braceCount++;
-                }
-
-                if (inJsonObject) {
-                    jsonBuffer += char;
-                }
-
-                if (char === '}') {
+                } else if (char === '}') {
                     if (inJsonObject) {
                         braceCount--;
                         if (braceCount <= 0) {
-                            const completeJson = jsonBuffer;
-                            jsonBuffer = "";
+                            const completeJson = jsonBufferArray.join('');
+                            jsonBufferArray = [];
                             braceCount = 0;
                             inJsonObject = false;
                             processCompleteJson(completeJson);
@@ -3956,31 +3952,18 @@
                 }
             }
 
-            // Failsafe to prevent memory leak on corrupted streams
-            if (jsonBuffer.length > 8192) {
-                jsonBuffer = "";
-                braceCount = 0;
-                inJsonObject = false;
-            }
-        }
-
-        function extractJsonFromBuffer() {
-            const firstBrace = jsonBuffer.indexOf('{');
-            const lastBrace = jsonBuffer.lastIndexOf('}');
-
-            if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-                const possibleJson = jsonBuffer.substring(firstBrace, lastBrace + 1);
-                try {
-                    JSON.parse(possibleJson);
-                    processCompleteJson(possibleJson);
-                    jsonBuffer = jsonBuffer.substring(lastBrace + 1);
-                } catch (e) {
-                    jsonBuffer = "";
+            // Failsafe to prevent memory leak on corrupted streams (8KB)
+            if (jsonBufferArray.length > 50) { // roughly 50 chunks of 100-200 bytes
+                let totalLen = 0;
+                for (let i = 0; i < jsonBufferArray.length; i++) totalLen += jsonBufferArray[i].length;
+                if (totalLen > 8192) {
+                    jsonBufferArray = [];
+                    braceCount = 0;
+                    inJsonObject = false;
                 }
-            } else {
-                jsonBuffer = "";
             }
         }
+
 
         function processCompleteJson(jsonStr) {
             try {
@@ -4041,9 +4024,9 @@
                 if (hdrRcvd) hdrRcvd.textContent = packetsReceived;
 
                 // Handle CAN status mapping
-                const canOnlineStatus = jsonData.st_CANconnect !== undefined ? (jsonData.st_CANconnect == 1) : 
-                                       (jsonData.can_status === 'can_ok' || jsonData.can_status === 'ok' || jsonData.can_status === 'OK');
-                
+                const canOnlineStatus = jsonData.st_CANconnect !== undefined ? (jsonData.st_CANconnect == 1) :
+                    (jsonData.can_status === 'can_ok' || jsonData.can_status === 'ok' || jsonData.can_status === 'OK');
+
                 const hasCanLogic = (jsonData.can_status !== undefined || jsonData.st_CANconnect !== undefined);
 
                 if (hasCanLogic) {
@@ -4133,7 +4116,12 @@
                 }
 
                 if (cmd === 'status') {
-                    setFirebaseValue('latest_status', jsonData);
+                    // THROTTLE FIREBASE SYNC TO 2HZ (500ms) for high-frequency status
+                    const now = Date.now();
+                    if (!window.lastStatusSyncTime || (now - window.lastStatusSyncTime > 500)) {
+                        setFirebaseValue('latest_status', jsonData);
+                        window.lastStatusSyncTime = now;
+                    }
                     document.getElementById('lastMsgType').textContent = 'STATUS';
                     document.getElementById('lastCmd').textContent = 'status';
                     document.getElementById('lastMsgTime').textContent = new Date().toLocaleTimeString();
@@ -4303,44 +4291,55 @@
         }
 
         function updateAutotuneStatus(data) {
-            if (data.cmd === 'autotune' || data.cmd === 'autotune_ack' || data.cmd === 'autotune_value' || data.cmd === 'run_autotune' || data.cmd === 'at_startrequest') {
-                
-                // Handle Motor Angle and Offset Angle
-                const mAngle = data.at_Motorangle ?? data.motor_angle ?? 0;
-                const oAngle = data.at_Offsetangle ?? data.offset_angle ?? data.offset_value ?? data.angle ?? 0;
+            // Include both 'autotune' and 'run_autotune' or any result that has one of the key fields
+            const isAutotuneCmd = data.cmd === 'autotune' || data.cmd === 'autotune_ack' || data.cmd === 'autotune_value' || data.cmd === 'run_autotune' || data.cmd === 'at_startrequest';
+
+            // Check if it's implicitly an autotune message by presence of keys
+            const hasAutotuneKeys = data.at_Motorangle !== undefined || data.at_Offsetangle !== undefined || data.motor_angle !== undefined || data.offset_angle !== undefined || data.at_OffsetAngle !== undefined || data['-at_Motorangle'] !== undefined;
+
+            if (isAutotuneCmd || hasAutotuneKeys) {
+
+                // Handle Motor Angle and Offset Angle with all possible variants
+                const mAngle = data.at_Motorangle ?? data.motor_angle ?? data['-at_Motorangle'] ?? data.st_at_Motorangle ?? 0;
+                const oAngle = data.at_Offsetangle ?? data.at_OffsetAngle ?? data.offset_angle ?? data.offset_value ?? data.angle ?? 0;
 
                 const elMAngle = document.getElementById('at_Motorangle');
-                if (elMAngle) elMAngle.textContent = mAngle.toFixed(2);
+                if (elMAngle) elMAngle.textContent = Number(mAngle).toFixed(2);
 
                 const elOAngle = document.getElementById('at_Offsetangle');
                 const elOAngleLegacy = document.getElementById('autotuneAngle');
-                if (elOAngle) elOAngle.textContent = oAngle.toFixed(2);
-                if (elOAngleLegacy) elOAngleLegacy.textContent = oAngle.toFixed(2);
+                if (elOAngle) elOAngle.textContent = Number(oAngle).toFixed(2);
+                if (elOAngleLegacy) elOAngleLegacy.textContent = Number(oAngle).toFixed(2);
 
                 // Render pie chart for angle on the timer circle
-                const safeAngle = Math.max(0, Math.min(360, oAngle % 360));
+                const safeAngle = Math.max(0, Math.min(360, Number(oAngle) % 360));
                 const circle = document.getElementById('autotuneTimerCircle');
                 if (circle) {
                     circle.style.background = `conic-gradient(#ffbd03 ${safeAngle}deg, #0a1f3d ${safeAngle}deg)`;
                 }
 
                 // Handle autotune mode flag
-                const isTuning = data.at_AutotuneMode == 1 || data.st_AutotuningMode == 1 || data.auto_tune == 1;
+                const isTuning = data.at_AutotuneMode == 1 || data.st_AutotuningMode == 1 || data.auto_tune == 1 || (isAutotuneCmd && data.status === 'running');
                 const textEl = document.getElementById('autotuneModeText');
                 if (textEl) {
                     textEl.innerHTML = isTuning ? 'Autotune Mode<br>ON' : 'Autotune Mode<br>OFF';
                     textEl.style.color = isTuning ? '#ffaa00' : '#8899aa';
                 }
-                if (isTuning) startAutotuneTimer();
-                else stopAutotuneTimer();
 
-                if (data.status === 'success' || data.status === 'SUCCESS') {
-                    const st = document.getElementById('autotuneResultStatus');
-                    if (st) { st.textContent = 'SUCCESSFUL'; st.style.color = '#00ffaa'; }
+                if (isTuning) startAutotuneTimer();
+
+                // Status Handling
+                const status = (data.status || '').toLowerCase();
+                const resultSt = document.getElementById('autotuneResultStatus');
+
+                if (status === 'success' || status === 'successful' || status === 'done') {
+                    if (resultSt) { resultSt.textContent = 'SUCCESSFUL'; resultSt.style.color = '#00ffaa'; }
                     stopAutotuneTimer();
-                } else if (data.status === 'failed' || data.status === 'FAILED') {
-                    const st = document.getElementById('autotuneResultStatus');
-                    if (st) { st.textContent = 'UNSUCCESSFUL'; st.style.color = '#ff4444'; }
+                } else if (status === 'failed' || status === 'unsuccessful' || status === 'timeout' || data.status === 255) {
+                    if (resultSt) {
+                        resultSt.textContent = (status === 'timeout') ? 'TIMEOUT' : 'UNSUCCESSFUL';
+                        resultSt.style.color = '#ff4444';
+                    }
                     stopAutotuneTimer();
                 }
             }
@@ -4678,7 +4677,7 @@
             document.getElementById('lastSentPayloadText').textContent = responseText;
 
             // Enqueue chunks sequentially to avoid 'GATT operation already in progress'
-            if (isAndroidApp() && isConnected) {
+            if (isNativeApp() && isConnected) {
                 // Route OTA data through native bridge
                 window.AndroidBLE.sendData(responseText);
             } else if (isConnected && writeCharacteristic) {
@@ -4711,8 +4710,24 @@
 
         // SW History arrays retained if backend data pushes ever query them but safely nullified from UI
 
-        // ==================== MOTOR STATUS UPDATE ====================
+        // ==================== MOTOR STATUS UPDATE (BATCHED) ====================
+        let nextMotorData = null;
+        let motorUpdatePending = false;
+
         function updateMotorStatus(data) {
+            nextMotorData = data;
+            if (!motorUpdatePending) {
+                motorUpdatePending = true;
+                requestAnimationFrame(processMotorUpdate);
+            }
+        }
+
+        function processMotorUpdate() {
+            if (!nextMotorData) { motorUpdatePending = false; return; }
+            const data = nextMotorData;
+            nextMotorData = null;
+            motorUpdatePending = false;
+
             statusMessageCount++;
             let el;
             if ((el = document.getElementById('msgIndicator'))) el.style.color = '#00ffaa';
@@ -4903,7 +4918,11 @@
                 'StartStop', 'ParkState', 'Standby', 'Motoring',
                 'VoltDer', 'DcClamp', 'MtrTempDer', 'CtrTempDer', 'AutoTune'
             ];
-            populateRemainingParams(data, knownKeys);
+            // Only populate unknown params if the history/debug tab is actually active
+            const debugTab = document.getElementById('debug');
+            if (debugTab && debugTab.style.display !== 'none') {
+                populateRemainingParams(data, knownKeys);
+            }
 
             setTimeout(() => {
                 let el;
@@ -5752,7 +5771,7 @@
         // ==================== SEND JSON ====================
         async function sendJSON(passedData = null) {
             // Android native BLE bridge
-            if (isAndroidApp()) {
+            if (isNativeApp()) {
                 if (!isConnected) {
                     alert('Not connected to any device');
                     return;
@@ -6001,6 +6020,14 @@
         }
 
         function addToReceivedHistory(data, tab = 'main') {
+            // THROTTLE STATUS LOGGING TO 10Hz (100ms) for high-frequency telemetry
+            const isStatus = data && (data.cmd === 'status' || Object.keys(data).some(k => k.startsWith('st_')));
+            const now = Date.now();
+            if (isStatus) {
+                if (now - lastReceivedStatusTime < 100) return;
+                lastReceivedStatusTime = now;
+            }
+
             const timestamp = new Date().toLocaleTimeString();
             const displayData = typeof data === 'string' ? data : JSON.stringify(data);
             const preview = displayData.substring(0, 50) + (displayData.length > 50 ? '...' : '');
@@ -6073,6 +6100,10 @@
         function updateSentHistoryDisplay() {
             const historyDiv = document.getElementById('sentHistory');
             if (!historyDiv) return;
+            // PERFORMANCE: Only update DOM if the tab is visible
+            const historyTab = document.getElementById('history');
+            if (!historyTab || historyTab.style.display === 'none') return;
+
             historyDiv.innerHTML = '';
             if (sentHistory.length === 0) {
                 historyDiv.innerHTML = '<div style="color: #8899aa; text-align: center; padding: 20px;">No sent history</div>';
@@ -6090,6 +6121,10 @@
         function updateReceivedHistoryDisplay() {
             const historyDiv = document.getElementById('receivedHistory');
             if (!historyDiv) return;
+            // PERFORMANCE: Only update DOM if the tab is visible
+            const historyTab = document.getElementById('history');
+            if (!historyTab || historyTab.style.display === 'none') return;
+
             historyDiv.innerHTML = '';
             if (receivedHistory.length === 0) {
                 historyDiv.innerHTML = '<div style="color: #8899aa; text-align: center; padding: 20px;">No received history</div>';
