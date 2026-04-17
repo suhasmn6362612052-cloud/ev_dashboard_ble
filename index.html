@@ -405,6 +405,52 @@
             -webkit-overflow-scrolling: touch;
         }
 
+        /* Write specific tabs */
+        .write-tab-panel {
+            display: none;
+            padding: 15px 0;
+        }
+
+        .write-tab-panel.active {
+            display: block;
+        }
+
+        .write-tabs-header {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            padding-bottom: 5px;
+            scroll-snap-type: x mandatory;
+        }
+
+        .write-tabs-header::-webkit-scrollbar {
+            display: none;
+        }
+
+        .write-tab-btn {
+            flex: 0 0 auto;
+            padding: 10px 18px;
+            background: #11287c;
+            color: #8899aa;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 1px solid #214FC6;
+            font-size: 13px;
+            font-weight: bold;
+            transition: all 0.3s;
+            scroll-snap-align: start;
+        }
+
+        .write-tab-btn.active {
+            background: linear-gradient(145deg, #0055ff, #001a66);
+            color: #fff;
+            border-color: #00ffaa;
+            box-shadow: 0 0 10px rgba(0, 255, 170, 0.3);
+        }
+
         .status-bar {
             background: #151f2f;
             height: 40px;
@@ -1417,8 +1463,8 @@
             aspect-ratio: 1;
             height: auto;
             border-radius: 50%;
-            background: #000B29;
-            border: 8px solid #214FC6;
+            background: conic-gradient(#214FC6 0deg, #0a0f1e 0deg);
+            border: 8px solid #0a0f1e;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -1426,6 +1472,23 @@
             box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5), 0 0 15px rgba(33, 79, 198, 0.6);
             flex-shrink: 0;
             box-sizing: border-box;
+            position: relative;
+            transition: background 0.3s ease;
+        }
+
+        /* Inner dark circle to make it a ring gauge */
+        .ev-main-gauge::before {
+            content: '';
+            position: absolute;
+            inset: 12px;
+            border-radius: 50%;
+            background: #000B29;
+            z-index: 0;
+        }
+
+        .ev-main-gauge>* {
+            position: relative;
+            z-index: 1;
         }
 
 
@@ -1727,33 +1790,33 @@
         </div>
     </div>
 
-    <!-- Top Status Bar: Utilization of "Above Space" -->
+    <!-- Top Status Bar -->
     <div class="top-status-bar">
         <div class="status-item">
             <span class="status-dot" id="canDot" style="color: #ff4444;">●</span>
             <span id="canBarText">CAN: Offline</span>
         </div>
         <div class="status-item">
-            <span class="status-dot" id="rangeDot" style="color: #8899aa;">●</span>
-            <span id="rangeBarText">Range: N/A</span>
+            <span id="rangeDot"
+                style="color: #8899aa; font-size: 14px; margin-right: 2px; display: flex; align-items: center;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M17.71 7.71L12 2h-1v7.59L6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 11 14.41V22h1l5.71-5.71-4.3-4.29 4.3-4.29zM13 5.41l2.29 2.29L13 9.99V5.41zm2.29 10.88L13 18.59v-4.58l2.29 2.28z" />
+                </svg>
+            </span>
+            <span id="rangeBarText" style="display:none;"></span>
         </div>
-        <div class="status-item">
-            <span class="status-dot" id="runDot" style="color: #ff4444;">●</span>
-            <span id="runStatusText">STOPPED</span>
-        </div>
-        <!-- Real-time Technical Badges -->
+        <!-- Hidden legacy run elements for JS compat -->
+        <span id="runDot" style="display:none;"></span>
+        <span id="runStatusText" style="display:none;">STOPPED</span>
+        <!-- Technical Badges -->
         <div class="status-item premium sw">
             <span>SW:</span>
             <span id="hdrSw">v0.0.0.0</span>
         </div>
-        <div class="status-item premium sent">
-            <span>SENT:</span>
-            <span id="hdrSent">0</span>
-        </div>
-        <div class="status-item premium rcvd">
-            <span>RCVD:</span>
-            <span id="hdrRcvd">0</span>
-        </div>
+        <!-- Hidden SENT/RCVD for JS compat (shown in bottom bar) -->
+        <span id="hdrSent" style="display:none;">0</span>
+        <span id="hdrRcvd" style="display:none;">0</span>
         <div class="status-item premium err" id="hdrErrBadge">
             <span>ERRS:</span>
             <span id="hdrErrors">0</span>
@@ -1942,17 +2005,17 @@
 
                                 <!-- CENTER COLUMN: Speed Circle & Trip -->
                                 <div class="ev-center-col" style="flex-direction: column; gap: 15px;">
-                                    <div class="ev-main-gauge">
-                                        <div class="ev-speed-val" id="st_MtrSpd"
-                                            style="font-size: 42px; margin-top: 10px;">0</div>
-                                        <div class="ev-speed-unit">RPM</div>
+                                    <!-- KM/H Speedometer Gauge (max 60) -->
+                                    <div class="ev-main-gauge" id="speedGaugeRing">
+                                        <div class="ev-speed-val" id="ui_RealSpeed">0</div>
+                                        <div class="ev-speed-unit">KM/H</div>
                                     </div>
 
-                                    <!-- New Trip Dashboard -->
+                                    <!-- Bottom Strip: RPM + TRIP KM -->
                                     <div class="trip-dashboard">
                                         <div class="trip-item">
-                                            <span class="trip-val" id="ui_RealSpeed">0.0</span>
-                                            <span class="trip-unit">KM/H</span>
+                                            <span class="trip-val" id="st_MtrSpd" style="color:#4db8ff;">0</span>
+                                            <span class="trip-unit">RPM</span>
                                         </div>
                                         <div class="trip-divider"></div>
                                         <div class="trip-item">
@@ -1985,7 +2048,6 @@
                                     <div class="ev-state-badge" id="badge_hill">Hill Hold</div>
                                     <div class="ev-state-badge" id="badge_regen">Regen Mode</div>
                                     <div class="ev-state-badge" id="badge_asc">ASC Mode</div>
-                                    <div class="ev-state-badge" id="badge_pc">PC Mode</div>
                                 </div>
                             </div>
 
@@ -2159,161 +2221,188 @@
                                     Waiting...</div>
                             </div>
 
-                            <!-- Write Panel 1: Power & Torque -->
-                            <div class="grid-panel" style="margin-bottom: 15px;">
-                                <div class="grid-title" style="display: flex; justify-content: space-between;">
-                                    <span>⚡ POWER & TORQUE WRITES</span>
-                                    <span style="font-size: 12px; color: #ffaa00;">MAX | CURRENT LIMIT</span>
-                                </div>
-                                <div class="param-row">
-                                    <span class="param-label">AC Current Limit</span>
-                                    <div class="param-inputs-wrap">
-                                        <input type="number" id="write_ac_0" class="param-input max-field">
-                                        <input type="number" id="write_ac_1" class="param-input">
-                                    </div>
-                                </div>
-                                <div class="param-row">
-                                    <span class="param-label">DC Current Limit</span>
-                                    <div class="param-inputs-wrap">
-                                        <input type="number" id="write_dc_0" class="param-input max-field">
-                                        <input type="number" id="write_dc_1" class="param-input">
-                                    </div>
-                                </div>
-                                <div class="param-row">
-                                    <span class="param-label">Regen Limit</span>
-                                    <div class="param-inputs-wrap">
-                                        <input type="number" id="write_rg_0" class="param-input max-field">
-                                        <input type="number" id="write_rg_1" class="param-input">
-                                    </div>
-                                </div>
-                                <div class="param-row">
-                                    <span class="param-label">Torque Limit</span>
-                                    <div class="param-inputs-wrap">
-                                        <input type="number" id="write_trq_0" class="param-input max-field">
-                                        <input type="number" id="write_trq_1" class="param-input">
-                                    </div>
-                                </div>
-                                <button class="btn btn-warning" onclick="sendConfigChunk1()"
-                                    style="width: 100%; margin-top: 10px;">📤 SEND POWER WRITES</button>
+                            <!-- Switchable Write Tabs -->
+                            <div class="write-tabs-header">
+                                <div class="write-tab-btn active" onclick="switchWriteTab(1)">⚡ POWER</div>
+                                <div class="write-tab-btn" onclick="switchWriteTab(2)">🏎️ SPEED</div>
+                                <div class="write-tab-btn" onclick="switchWriteTab(3)">🌡️ TEMP</div>
+                                <div class="write-tab-btn" onclick="switchWriteTab(4)">🌱 ECO</div>
                             </div>
 
-                            <!-- Write Panel 2: Speed & Battery -->
-                            <div class="grid-panel" style="margin-bottom: 15px;">
-                                <div class="grid-title" style="display: flex; justify-content: space-between;">
-                                    <span>🏎️ SPEED & THROTTLE WRITES</span>
-                                    <span style="font-size: 12px; color: #ffaa00;">MAX | LIMITS</span>
-                                </div>
-                                <div class="param-row">
-                                    <span class="param-label">Speed Fwd Limit</span>
-                                    <div class="param-inputs-wrap">
-                                        <input type="number" id="write_spdF_0" class="param-input max-field" readonly
-                                            style="color:red;">
-                                        <input type="number" id="write_spdF_1" class="param-input">
+                            <div id="write_panels_container">
+                                <!-- Write Panel 1: Power & Torque -->
+                                <div class="write-tab-panel active" id="write_tab_1">
+                                    <div class="grid-panel">
+                                        <div class="grid-title" style="display: flex; justify-content: space-between;">
+                                            <span>⚡ POWER & TORQUE WRITES</span>
+                                            <span style="font-size: 12px; color: #ffaa00;">MAX | CURRENT LIMIT</span>
+                                        </div>
+                                        <div class="param-row">
+                                            <span class="param-label">AC Current Limit</span>
+                                            <div class="param-inputs-wrap">
+                                                <input type="number" id="write_ac_0" class="param-input max-field">
+                                                <input type="number" id="write_ac_1" class="param-input">
+                                            </div>
+                                        </div>
+                                        <div class="param-row">
+                                            <span class="param-label">DC Current Limit</span>
+                                            <div class="param-inputs-wrap">
+                                                <input type="number" id="write_dc_0" class="param-input max-field">
+                                                <input type="number" id="write_dc_1" class="param-input">
+                                            </div>
+                                        </div>
+                                        <div class="param-row">
+                                            <span class="param-label">Regen Limit</span>
+                                            <div class="param-inputs-wrap">
+                                                <input type="number" id="write_rg_0" class="param-input max-field">
+                                                <input type="number" id="write_rg_1" class="param-input">
+                                            </div>
+                                        </div>
+                                        <div class="param-row">
+                                            <span class="param-label">Torque Limit</span>
+                                            <div class="param-inputs-wrap">
+                                                <input type="number" id="write_trq_0" class="param-input max-field">
+                                                <input type="number" id="write_trq_1" class="param-input">
+                                            </div>
+                                        </div>
+                                        <button class="btn btn-warning" onclick="sendConfigChunk1()"
+                                            style="width: 100%; margin-top: 10px;">📤 SEND POWER WRITES</button>
+                                        <div class="write-status-msg"
+                                            style="color: #8899aa; margin-top: 10px; text-align: center; font-size: 14px; font-weight: bold;">
+                                            Ready to Write</div>
                                     </div>
                                 </div>
-                                <div class="param-row">
-                                    <span class="param-label">Vbatt Limits (1,2,3)</span>
-                                    <div class="param-inputs-wrap">
-                                        <input type="number" id="write_Vbatt_0" class="param-input max-field" readonly
-                                            style="color:red;">
-                                        <input type="number" id="write_Vbatt_1" class="param-input">
-                                        <input type="number" id="write_Vbatt_2" class="param-input">
-                                        <input type="number" id="write_Vbatt_3" class="param-input">
+
+                                <!-- Write Panel 2: Speed & Battery -->
+                                <div class="write-tab-panel" id="write_tab_2">
+                                    <div class="grid-panel">
+                                        <div class="grid-title" style="display: flex; justify-content: space-between;">
+                                            <span>🏎️ SPEED & THROTTLE WRITES</span>
+                                            <span style="font-size: 12px; color: #ffaa00;">MAX | LIMITS</span>
+                                        </div>
+                                        <div class="param-row">
+                                            <span class="param-label">Speed Fwd Limit</span>
+                                            <div class="param-inputs-wrap">
+                                                <input type="number" id="write_spdF_0" class="param-input max-field"
+                                                    readonly style="color:red;">
+                                                <input type="number" id="write_spdF_1" class="param-input">
+                                            </div>
+                                        </div>
+                                        <div class="param-row">
+                                            <span class="param-label">Vbatt Limits (1,2,3)</span>
+                                            <div class="param-inputs-wrap">
+                                                <input type="number" id="write_Vbatt_0" class="param-input max-field"
+                                                    readonly style="color:red;">
+                                                <input type="number" id="write_Vbatt_1" class="param-input">
+                                                <input type="number" id="write_Vbatt_2" class="param-input">
+                                                <input type="number" id="write_Vbatt_3" class="param-input">
+                                            </div>
+                                        </div>
+                                        <div class="param-row">
+                                            <span class="param-label">Thr Limits (1,2,3)</span>
+                                            <div class="param-inputs-wrap">
+                                                <input type="number" id="write_Thr_0" class="param-input max-field"
+                                                    readonly style="color:red;">
+                                                <input type="number" id="write_Thr_1" class="param-input">
+                                                <input type="number" id="write_Thr_2" class="param-input">
+                                                <input type="number" id="write_Thr_3" class="param-input">
+                                            </div>
+                                        </div>
+                                        <button class="btn btn-warning" onclick="sendConfigChunk2()"
+                                            style="width: 100%; margin-top: 10px;">📤 SEND SPEED WRITES</button>
+                                        <div class="write-status-msg"
+                                            style="color: #8899aa; margin-top: 10px; text-align: center; font-size: 14px; font-weight: bold;">
+                                            Ready to Write</div>
                                     </div>
                                 </div>
-                                <div class="param-row">
-                                    <span class="param-label">Thr Limits (1,2,3)</span>
-                                    <div class="param-inputs-wrap">
-                                        <input type="number" id="write_Thr_0" class="param-input max-field" readonly
-                                            style="color:red;">
-                                        <input type="number" id="write_Thr_1" class="param-input">
-                                        <input type="number" id="write_Thr_2" class="param-input">
-                                        <input type="number" id="write_Thr_3" class="param-input">
+
+                                <!-- Write Panel 3: Temperature & Accel -->
+                                <div class="write-tab-panel" id="write_tab_3">
+                                    <div class="grid-panel">
+                                        <div class="grid-title" style="display: flex; justify-content: space-between;">
+                                            <span>🌡️ TEMP & RAMP WRITES</span>
+                                            <span style="font-size: 12px; color: #ffaa00;">MAX | LIMIT</span>
+                                        </div>
+                                        <div class="param-row">
+                                            <span class="param-label">Motor Temp</span>
+                                            <div class="param-inputs-wrap">
+                                                <input type="number" id="write_mtrTmp_0" class="param-input max-field"
+                                                    readonly style="color:red;">
+                                                <input type="number" id="write_mtrTmp_1" class="param-input">
+                                            </div>
+                                        </div>
+                                        <div class="param-row">
+                                            <span class="param-label">Ctrl Temp</span>
+                                            <div class="param-inputs-wrap">
+                                                <input type="number" id="write_ctrTmp_0" class="param-input max-field"
+                                                    readonly style="color:red;">
+                                                <input type="number" id="write_ctrTmp_1" class="param-input">
+                                            </div>
+                                        </div>
+                                        <div class="param-row">
+                                            <span class="param-label">Accel</span>
+                                            <div class="param-inputs-wrap">
+                                                <input type="number" id="write_acc_0" class="param-input max-field"
+                                                    readonly style="color:red;">
+                                                <input type="number" id="write_acc_1" class="param-input">
+                                            </div>
+                                        </div>
+                                        <div class="param-row">
+                                            <span class="param-label">Decel</span>
+                                            <div class="param-inputs-wrap">
+                                                <input type="number" id="write_dec_0" class="param-input max-field"
+                                                    readonly style="color:red;">
+                                                <input type="number" id="write_dec_1" class="param-input">
+                                            </div>
+                                        </div>
+                                        <button class="btn btn-warning" onclick="sendConfigChunk3()"
+                                            style="width: 100%; margin-top: 10px;">📤 SEND TEMP WRITES</button>
+                                        <div class="write-status-msg"
+                                            style="color: #8899aa; margin-top: 10px; text-align: center; font-size: 14px; font-weight: bold;">
+                                            Ready to Write</div>
                                     </div>
                                 </div>
-                                <button class="btn btn-warning" onclick="sendConfigChunk2()"
-                                    style="width: 100%; margin-top: 10px;">📤 SEND SPEED WRITES</button>
+
+                                <!-- Write Panel 4: Eco Settings -->
+                                <div class="write-tab-panel" id="write_tab_4">
+                                    <div class="grid-panel">
+                                        <div class="grid-title" style="display: flex; justify-content: space-between;">
+                                            <span>🌱 ECO MODE WRITES</span>
+                                            <span style="font-size: 12px; color: #ffaa00;">MAX | LIMIT</span>
+                                        </div>
+                                        <div class="param-row">
+                                            <span class="param-label">Eco Speed</span>
+                                            <div class="param-inputs-wrap">
+                                                <input type="number" id="write_ecoSpd_0" class="param-input max-field"
+                                                    readonly style="color:red;">
+                                                <input type="number" id="write_ecoSpd_1" class="param-input">
+                                            </div>
+                                        </div>
+                                        <div class="param-row">
+                                            <span class="param-label">Eco Accel</span>
+                                            <div class="param-inputs-wrap">
+                                                <input type="number" id="write_ecoAcc_0" class="param-input max-field"
+                                                    readonly style="color:red;">
+                                                <input type="number" id="write_ecoAcc_1" class="param-input">
+                                            </div>
+                                        </div>
+                                        <div class="param-row">
+                                            <span class="param-label">Eco Power</span>
+                                            <div class="param-inputs-wrap">
+                                                <input type="number" id="write_ecoPwr_0" class="param-input max-field"
+                                                    readonly style="color:red;">
+                                                <input type="number" id="write_ecoPwr_1" class="param-input">
+                                            </div>
+                                        </div>
+                                        <button class="btn btn-warning" onclick="sendConfigChunk4()"
+                                            style="width: 100%; margin-top: 10px;">📤 SEND ECO WRITES</button>
+                                        <div class="write-status-msg"
+                                            style="color: #8899aa; margin-top: 10px; text-align: center; font-size: 14px; font-weight: bold;">
+                                            Ready to Write</div>
+                                    </div>
+                                </div>
                             </div>
 
-                            <!-- Write Panel 3: Temperature & Accel -->
-                            <div class="grid-panel" style="margin-bottom: 15px;">
-                                <div class="grid-title" style="display: flex; justify-content: space-between;">
-                                    <span>🌡️ TEMP & RAMP WRITES</span>
-                                    <span style="font-size: 12px; color: #ffaa00;">MAX | LIMIT</span>
-                                </div>
-                                <div class="param-row">
-                                    <span class="param-label">Motor Temp</span>
-                                    <div class="param-inputs-wrap">
-                                        <input type="number" id="write_mtrTmp_0" class="param-input max-field" readonly
-                                            style="color:red;">
-                                        <input type="number" id="write_mtrTmp_1" class="param-input">
-                                    </div>
-                                </div>
-                                <div class="param-row">
-                                    <span class="param-label">Ctrl Temp</span>
-                                    <div class="param-inputs-wrap">
-                                        <input type="number" id="write_ctrTmp_0" class="param-input max-field" readonly
-                                            style="color:red;">
-                                        <input type="number" id="write_ctrTmp_1" class="param-input">
-                                    </div>
-                                </div>
-                                <div class="param-row">
-                                    <span class="param-label">Accel</span>
-                                    <div class="param-inputs-wrap">
-                                        <input type="number" id="write_acc_0" class="param-input max-field" readonly
-                                            style="color:red;">
-                                        <input type="number" id="write_acc_1" class="param-input">
-                                    </div>
-                                </div>
-                                <div class="param-row">
-                                    <span class="param-label">Decel</span>
-                                    <div class="param-inputs-wrap">
-                                        <input type="number" id="write_dec_0" class="param-input max-field" readonly
-                                            style="color:red;">
-                                        <input type="number" id="write_dec_1" class="param-input">
-                                    </div>
-                                </div>
-                                <button class="btn btn-warning" onclick="sendConfigChunk3()"
-                                    style="width: 100%; margin-top: 10px;">📤 SEND TEMP WRITES</button>
-                            </div>
-
-                            <!-- Write Panel 4: Eco Settings -->
-                            <div class="grid-panel" style="margin-bottom: 15px;">
-                                <div class="grid-title" style="display: flex; justify-content: space-between;">
-                                    <span>🌱 ECO MODE WRITES</span>
-                                    <span style="font-size: 12px; color: #ffaa00;">MAX | LIMIT</span>
-                                </div>
-                                <div class="param-row">
-                                    <span class="param-label">Eco Speed</span>
-                                    <div class="param-inputs-wrap">
-                                        <input type="number" id="write_ecoSpd_0" class="param-input max-field" readonly
-                                            style="color:red;">
-                                        <input type="number" id="write_ecoSpd_1" class="param-input">
-                                    </div>
-                                </div>
-                                <div class="param-row">
-                                    <span class="param-label">Eco Accel</span>
-                                    <div class="param-inputs-wrap">
-                                        <input type="number" id="write_ecoAcc_0" class="param-input max-field" readonly
-                                            style="color:red;">
-                                        <input type="number" id="write_ecoAcc_1" class="param-input">
-                                    </div>
-                                </div>
-                                <div class="param-row">
-                                    <span class="param-label">Eco Power</span>
-                                    <div class="param-inputs-wrap">
-                                        <input type="number" id="write_ecoPwr_0" class="param-input max-field" readonly
-                                            style="color:red;">
-                                        <input type="number" id="write_ecoPwr_1" class="param-input">
-                                    </div>
-                                </div>
-                                <button class="btn btn-warning" onclick="sendConfigChunk4()"
-                                    style="width: 100%; margin-top: 10px;">📤 SEND ECO WRITES</button>
-                            </div>
-
-                            <div id="writeStatus"
-                                style="color: #8899aa; margin-top: 10px; text-align: center; font-size: 16px; font-weight: bold; background: #1e2a3a; padding: 10px; border-radius: 5px;">
-                                Ready to Write</div>
                         </div>
 
                         <div class="fetch-right">
@@ -2424,9 +2513,17 @@
                 <span class="bs-dot" id="bsConnDot" style="color: #ff4444;">●</span>
                 <span id="bsConnText" style="color: #ff4444;">Disconnected</span>
             </div>
-            <div class="bs-item">
-                <span>Parking:</span>
+            <div class="bs-item" style="margin-left:6px;">
+                <span style="color:#8899aa;">P:</span>
                 <span id="bsParkingText" style="color: #ffaa00;">Parked</span>
+            </div>
+            <div class="bs-item" style="margin-left:6px;">
+                <span style="color:#8899aa;">S:</span>
+                <span id="bsSentCount" style="color: #ffaa00;">0</span>
+            </div>
+            <div class="bs-item">
+                <span style="color:#8899aa;">R:</span>
+                <span id="bsRcvdCount" style="color: #00ffaa;">0</span>
             </div>
         </div>
         <div class="bs-right">
@@ -2484,9 +2581,9 @@
         // NOTE: Must be a function (not const) to handle WebView injection timing
         // Generalized Native Bridge detection (Android, Flutter, etc.)
         function isNativeApp() {
-            return (typeof window.AndroidBLE !== 'undefined') || 
-                   (typeof window.FlutterBLE !== 'undefined') || 
-                   (window.flutter_inappwebview && typeof window.flutter_inappwebview.callHandler === 'function');
+            return (typeof window.AndroidBLE !== 'undefined') ||
+                (typeof window.FlutterBLE !== 'undefined') ||
+                (window.flutter_inappwebview && typeof window.flutter_inappwebview.callHandler === 'function');
         }
 
         // Pointer to the active native bridge
@@ -3375,24 +3472,35 @@
                     throw new Error(isIOS ? "iOS Blocked: Apple does not allow Bluetooth in Safari. Please download 'WebBLE' or 'Bluefy' from the App Store and open this page inside that app to connect." : "Web Bluetooth API is not available in your browser.");
                 }
 
-                // Note: iOS WebBLE and Bluefy specifically require acceptAllDevices: true WITH optionalServices.
-                const device = await navigator.bluetooth.requestDevice({
-                    acceptAllDevices: true,
-                    optionalServices: [
-                        '19b10000-e8f2-537e-4f6c-d104768a1214', // Primary DCU Service
-                        '0000ffe0-0000-1000-8000-00805f9b34fb',
-                        '0000ffe1-0000-1000-8000-00805f9b34fb',
-                        '6e400001-b5a3-f393-e0a9-e50e24dcca9e',
-                        '6e400002-b5a3-f393-e0a9-e50e24dcca9e',
-                        '6e400003-b5a3-f393-e0a9-e50e24dcca9e'
-                    ]
-                });
+                // Use service UUID filters so only DCU-compatible devices appear in the scan popup.
+                // iOS (WebBLE/Bluefy) must use acceptAllDevices:true — filters are not supported there.
+                const optServices = [
+                    '19b10000-e8f2-537e-4f6c-d104768a1214',
+                    '0000ffe0-0000-1000-8000-00805f9b34fb',
+                    '0000ffe1-0000-1000-8000-00805f9b34fb',
+                    '6e400001-b5a3-f393-e0a9-e50e24dcca9e',
+                    '6e400002-b5a3-f393-e0a9-e50e24dcca9e',
+                    '6e400003-b5a3-f393-e0a9-e50e24dcca9e'
+                ];
 
-                // Save to Firebase
-                if (firebaseReady) {
+                const requestOptions = isIOS
+                    ? { acceptAllDevices: true, optionalServices: optServices }
+                    : {
+                        filters: [
+                            { services: ['19b10000-e8f2-537e-4f6c-d104768a1214'] },
+                            { services: ['0000ffe0-0000-1000-8000-00805f9b34fb'] },
+                            { services: ['6e400001-b5a3-f393-e0a9-e50e24dcca9e'] },
+                        ],
+                        optionalServices: optServices
+                    };
+
+                const device = await navigator.bluetooth.requestDevice(requestOptions);
+
+                // Save to Firebase — only save devices with a real name
+                if (firebaseReady && device.name && device.name.trim() !== '') {
                     firebaseDB.ref('paired_devices/' + device.id).set({
                         id: device.id,
-                        name: device.name || 'Unknown Device',
+                        name: device.name,
                         added_at: firebase.database.ServerValue.TIMESTAMP
                     });
                 }
@@ -3437,7 +3545,19 @@
                     return;
                 }
 
-                Object.values(devices).forEach(dev => {
+                // Filter: only show devices with a real name
+                const namedDevices = Object.values(devices).filter(dev =>
+                    dev.name && dev.name.trim() !== '' &&
+                    !dev.name.toLowerCase().includes('unknown') &&
+                    !dev.name.toLowerCase().includes('unsupported')
+                );
+
+                if (namedDevices.length === 0) {
+                    deviceList.innerHTML = '<div style="color: #8899aa; text-align: center; padding: 20px;">No named devices saved yet. Click SCAN to find your device.</div>';
+                    return;
+                }
+
+                namedDevices.forEach(dev => {
                     const div = document.createElement('div');
                     div.className = 'device-item';
                     div.innerHTML = `
@@ -3453,8 +3573,6 @@
                             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
                             if (isIOS) {
-                                // WebBLE and Bluefy often do not support getDevices() properly due to Apple's abstraction
-                                // Direct them to scan again instead of erroring out obscurely
                                 alert("On iOS, saved devices cannot be reconnected directly due to Apple privacy rules. Please click the main 'SCAN FOR DEVICES' button above to reconnect.");
                                 return;
                             }
@@ -3463,8 +3581,6 @@
                                 throw new Error("Your browser version does not support the Web Bluetooth getDevices() API.");
                             }
 
-                            // Try to get the permitted device from the browser's list of connected/permitted devices
-                            // Note: This relies on the browser having already permitted the device.
                             const permittedDevices = await navigator.bluetooth.getDevices();
                             const matchedDevice = permittedDevices.find(d => d.id === dev.id);
 
@@ -3991,25 +4107,16 @@
                 }
                 */
 
-                // Global SW Version check from any packet
-                let swDisplay = null;
-                if (jsonData.cmd === 'sw_ver' || (jsonData.maj !== undefined && jsonData.min !== undefined)) {
-                    swDisplay = `v${jsonData.maj || 0}.${jsonData.min || 0}.${jsonData.pat || 0}.${jsonData.bld || 0}`;
-                } else {
-                    const swVal = jsonData.sw || jsonData.version || jsonData.sw_version;
-                    if (swVal !== undefined) {
-                        const version = Array.isArray(swVal) ? swVal[0] : swVal;
-                        swDisplay = version.startsWith('v') ? version : `v${version}`;
-                    }
-                }
-
-                if (swDisplay) {
+                // Global SW Version — firmware sends version directly as a string
+                // Supported fields: st_SoftwareVersion, sw, version, sw_version
+                const swVal = jsonData.st_SoftwareVersion || jsonData.sw || jsonData.version || jsonData.sw_version;
+                if (swVal !== undefined) {
+                    const version = Array.isArray(swVal) ? swVal[0] : String(swVal);
+                    const swDisplay = version.startsWith('v') ? version : 'v' + version;
                     const swTxt = document.getElementById('swVersionText');
-                    if (swTxt) swTxt.textContent = `sw=${swDisplay}`;
-
-                    // NEW: Update Header SW Version
+                    if (swTxt) swTxt.textContent = swDisplay;
                     const hdrSw = document.getElementById('hdrSw');
-                    if (hdrSw) hdrSw.textContent = `sw=${swDisplay}`;
+                    if (hdrSw) hdrSw.textContent = swDisplay;
                 }
 
                 packetsReceived++;
@@ -4023,7 +4130,7 @@
                 const hdrRcvd = document.getElementById('hdrRcvd');
                 if (hdrRcvd) hdrRcvd.textContent = packetsReceived;
 
-                // Handle CAN status mapping
+                // Handle CAN status mapping — st_CANconnect: 1=online, 0=offline
                 const canOnlineStatus = jsonData.st_CANconnect !== undefined ? (jsonData.st_CANconnect == 1) :
                     (jsonData.can_status === 'can_ok' || jsonData.can_status === 'ok' || jsonData.can_status === 'OK');
 
@@ -4037,41 +4144,30 @@
 
                     if (canOnlineStatus) {
                         if (canInd) canInd.style.color = '#00ffaa';
-                        if (canText) {
-                            canText.textContent = 'CAN: OK';
-                            canText.style.color = '#00ffaa';
-                        }
+                        if (canText) { canText.textContent = 'CAN: OK'; canText.style.color = '#00ffaa'; }
                         if (canDot) canDot.style.color = '#00ffaa';
-                        if (canBarTxt) {
-                            canBarTxt.textContent = 'CAN: OK';
-                            canBarTxt.style.color = '#00ffaa';
-                        }
+                        if (canBarTxt) { canBarTxt.textContent = 'CAN: OK'; canBarTxt.style.color = '#00ffaa'; }
                     } else {
                         if (canInd) canInd.style.color = '#ff4444';
-                        if (canText) {
-                            canText.textContent = 'CAN: Offline';
-                            canText.style.color = '#ff4444';
-                        }
+                        if (canText) { canText.textContent = 'CAN: Offline'; canText.style.color = '#ff4444'; }
                         if (canDot) canDot.style.color = '#ff4444';
-                        if (canBarTxt) {
-                            canBarTxt.textContent = 'CAN: Offline';
-                            canBarTxt.style.color = '#ff4444';
-                        }
+                        if (canBarTxt) { canBarTxt.textContent = 'CAN: Offline'; canBarTxt.style.color = '#ff4444'; }
                     }
 
                     if (window.canStatusTimeout) clearTimeout(window.canStatusTimeout);
                     window.canStatusTimeout = setTimeout(() => {
-                        if (canInd) canInd.style.color = '#667788';
-                        if (canText) {
-                            canText.textContent = 'CAN: Offline';
-                            canText.style.color = '#8899aa';
-                        }
                         if (canDot) canDot.style.color = '#ff4444';
-                        if (canBarTxt) {
-                            canBarTxt.textContent = 'CAN: Offline';
-                            canBarTxt.style.color = '#8899aa';
-                        }
+                        if (canBarTxt) { canBarTxt.textContent = 'CAN: Offline'; canBarTxt.style.color = '#8899aa'; }
                     }, 5000);
+                }
+
+                // Handle BLE Range — st_BLErange: 0–100 (colour only, no text)
+                if (jsonData.st_BLErange !== undefined) {
+                    const pct = Math.max(0, Math.min(100, parseInt(jsonData.st_BLErange, 10) || 0));
+                    // New thresholds: >50 green, 20-50 yellow, <20 red
+                    const rangeColor = pct > 50 ? '#00ffaa' : pct >= 20 ? '#ffaa00' : '#ff4444';
+                    const rangeDot = _el('rangeDot');
+                    if (rangeDot) rangeDot.style.color = rangeColor;
                 }
 
                 // Display in receive tab (if exists)
@@ -4152,14 +4248,18 @@
                     document.getElementById('fetchStatus').style.color = '#ff4444';
                 }
                 else if (jsonData.status === 'config_update_ok' || (cmd === 'cfg_fetch' && jsonData.status === 'ok')) {
-                    const ws = document.getElementById('writeStatus');
-                    if (ws) { ws.textContent = '✅ Config Update OK'; ws.style.color = '#00ffaa'; }
+                    document.querySelectorAll('.write-status-msg').forEach(ws => {
+                        ws.textContent = '✅ Config Update OK';
+                        ws.style.color = '#00ffaa';
+                    });
                     const fs = document.getElementById('fetchStatus');
                     if (fs && fs.textContent.includes('waiting')) fs.textContent = 'Ready';
                 }
                 else if (jsonData.status === 'config_update_fail') {
-                    const ws = document.getElementById('writeStatus');
-                    if (ws) { ws.textContent = '❌ Config Update Failed'; ws.style.color = '#ff4444'; }
+                    document.querySelectorAll('.write-status-msg').forEach(ws => {
+                        ws.textContent = '❌ Config Update Failed';
+                        ws.style.color = '#ff4444';
+                    });
                 }
                 else if (cmd === 'write') {
                     updateWriteValues(jsonData);
@@ -4269,7 +4369,7 @@
 
         function sendAutotuneCustomCommand() {
             try {
-                const jsonData = { "cmd": "at_startrequest" };
+                const jsonData = { "cmd": "autotune", "at_AutoTuneStartRequest": 1 };
                 const jsonText = JSON.stringify(jsonData);
 
                 document.getElementById('jsonInput').value = jsonText;
@@ -4291,57 +4391,64 @@
         }
 
         function updateAutotuneStatus(data) {
-            // Include both 'autotune' and 'run_autotune' or any result that has one of the key fields
-            const isAutotuneCmd = data.cmd === 'autotune' || data.cmd === 'autotune_ack' || data.cmd === 'autotune_value' || data.cmd === 'run_autotune' || data.cmd === 'at_startrequest';
+            // Match on cmd:autotune or presence of at_AutoTune* keys
+            const isAutotuneCmd = data.cmd === 'autotune' || data.cmd === 'autotune_ack' || data.cmd === 'autotune_value' || data.cmd === 'run_autotune';
+            const hasAutotuneKeys = data.at_AutoTuneAngle !== undefined || data.at_AutoTuneOffsetAngle !== undefined ||
+                data.at_Motorangle !== undefined || data.at_Offsetangle !== undefined || data.motor_angle !== undefined;
 
-            // Check if it's implicitly an autotune message by presence of keys
-            const hasAutotuneKeys = data.at_Motorangle !== undefined || data.at_Offsetangle !== undefined || data.motor_angle !== undefined || data.offset_angle !== undefined || data.at_OffsetAngle !== undefined || data['-at_Motorangle'] !== undefined;
+            if (!isAutotuneCmd && !hasAutotuneKeys) return;
 
-            if (isAutotuneCmd || hasAutotuneKeys) {
+            addToAutotuneReceivedHistory(data);
 
-                // Handle Motor Angle and Offset Angle with all possible variants
-                const mAngle = data.at_Motorangle ?? data.motor_angle ?? data['-at_Motorangle'] ?? data.st_at_Motorangle ?? 0;
-                const oAngle = data.at_Offsetangle ?? data.at_OffsetAngle ?? data.offset_angle ?? data.offset_value ?? data.angle ?? 0;
+            // ─── Motor Angle ───
+            const mAngle = data.at_AutoTuneAngle ?? data.at_Motorangle ?? data.motor_angle ?? 0;
+            const elMAngle = document.getElementById('at_Motorangle');
+            if (elMAngle) elMAngle.textContent = Number(mAngle).toFixed(2);
 
-                const elMAngle = document.getElementById('at_Motorangle');
-                if (elMAngle) elMAngle.textContent = Number(mAngle).toFixed(2);
+            // ─── Offset Angle ───
+            const oAngle = data.at_AutoTuneOffsetAngle ?? data.at_Offsetangle ?? data.at_OffsetAngle ?? data.offset_angle ?? data.offset_value ?? 0;
+            const elOAngle = document.getElementById('at_Offsetangle');
+            const elOAngleLegacy = document.getElementById('autotuneAngle');
+            if (elOAngle) elOAngle.textContent = Number(oAngle).toFixed(2);
+            if (elOAngleLegacy) elOAngleLegacy.textContent = Number(oAngle).toFixed(2);
 
-                const elOAngle = document.getElementById('at_Offsetangle');
-                const elOAngleLegacy = document.getElementById('autotuneAngle');
-                if (elOAngle) elOAngle.textContent = Number(oAngle).toFixed(2);
-                if (elOAngleLegacy) elOAngleLegacy.textContent = Number(oAngle).toFixed(2);
+            // ─── Pie chart ───
+            const safeAngle = Math.max(0, Math.min(360, Number(oAngle) % 360));
+            const circle = document.getElementById('autotuneTimerCircle');
+            if (circle) circle.style.background = `conic-gradient(#ffbd03 ${safeAngle}deg, #0a1f3d ${safeAngle}deg)`;
 
-                // Render pie chart for angle on the timer circle
-                const safeAngle = Math.max(0, Math.min(360, Number(oAngle) % 360));
-                const circle = document.getElementById('autotuneTimerCircle');
-                if (circle) {
-                    circle.style.background = `conic-gradient(#ffbd03 ${safeAngle}deg, #0a1f3d ${safeAngle}deg)`;
+            // ─── Tuning mode (at_AutotuningMode: 1=ON) ───
+            const isTuning = data.at_AutotuningMode == 1 || data.at_AutotuneMode == 1 || data.auto_tune == 1;
+            const textEl = document.getElementById('autotuneModeText');
+            if (textEl) {
+                textEl.innerHTML = isTuning ? 'Autotune Mode<br>ON' : 'Autotune Mode<br>OFF';
+                textEl.style.color = isTuning ? '#ffaa00' : '#8899aa';
+            }
+            if (isTuning) startAutotuneTimer();
+
+            // ─── Result: at_AutotuningAck 1=success, 0=fail/waiting ───
+            const ack = data.at_AutotuningAck;
+            const resultSt = document.getElementById('autotuneResultStatus');
+
+            if (ack === 1 || ack === '1') {
+                // SUCCESS
+                if (resultSt) { resultSt.textContent = 'SUCCESSFUL ✔'; resultSt.style.color = '#00ffaa'; }
+                stopAutotuneTimer();
+            } else if (ack === 0 || ack === '0') {
+                // ack=0 means tuning not yet complete; check if timer already expired = UNSUCCESSFUL
+                if (resultSt && resultSt.textContent === 'WAITING...') {
+                    // Still waiting — leave timer running; timer expiry at 30s marks UNSUCCESSFUL
                 }
+            }
 
-                // Handle autotune mode flag
-                const isTuning = data.at_AutotuneMode == 1 || data.st_AutotuningMode == 1 || data.auto_tune == 1 || (isAutotuneCmd && data.status === 'running');
-                const textEl = document.getElementById('autotuneModeText');
-                if (textEl) {
-                    textEl.innerHTML = isTuning ? 'Autotune Mode<br>ON' : 'Autotune Mode<br>OFF';
-                    textEl.style.color = isTuning ? '#ffaa00' : '#8899aa';
-                }
-
-                if (isTuning) startAutotuneTimer();
-
-                // Status Handling
-                const status = (data.status || '').toLowerCase();
-                const resultSt = document.getElementById('autotuneResultStatus');
-
-                if (status === 'success' || status === 'successful' || status === 'done') {
-                    if (resultSt) { resultSt.textContent = 'SUCCESSFUL'; resultSt.style.color = '#00ffaa'; }
-                    stopAutotuneTimer();
-                } else if (status === 'failed' || status === 'unsuccessful' || status === 'timeout' || data.status === 255) {
-                    if (resultSt) {
-                        resultSt.textContent = (status === 'timeout') ? 'TIMEOUT' : 'UNSUCCESSFUL';
-                        resultSt.style.color = '#ff4444';
-                    }
-                    stopAutotuneTimer();
-                }
+            // Legacy status string support
+            const status = (data.status || '').toLowerCase();
+            if (status === 'success' || status === 'successful' || status === 'done') {
+                if (resultSt) { resultSt.textContent = 'SUCCESSFUL ✔'; resultSt.style.color = '#00ffaa'; }
+                stopAutotuneTimer();
+            } else if (status === 'failed' || status === 'unsuccessful' || status === 'timeout') {
+                if (resultSt) { resultSt.textContent = 'UNSUCCESSFUL ✘'; resultSt.style.color = '#ff4444'; }
+                stopAutotuneTimer();
             }
         }
 
@@ -4742,7 +4849,8 @@
             // ── Normalise: map Arduino short names → canonical field names ──
             // This lets us handle BOTH "st_CtrlrTemp" (old) and "CtrlTemp" (current arduino)
             const d = {
-                speed: data.st_mtr_spd ?? data.st_MtrSpd ?? data.mtr_spd ?? data.Speed,
+                speed: data.st_RPM ?? data.st_mtr_spd ?? data.st_MtrSpd ?? data.mtr_spd ?? data.Speed,
+                kmph: data.st_Kmph ?? data.st_kmph,
                 torque: data.st_throt_trq ?? data.st_ThrotTrq ?? data.mtr_trq ?? data.Trq ?? data.Tiq,
                 ctrlTemp: data.st_ctrlr_temp ?? data.st_CtrlrTemp ?? data.ctrl_temp ?? data.CtrlTemp,
                 ctrlTemp1: data.st_ctrlr_temp1,
@@ -4752,7 +4860,7 @@
                 acCurr: data.st_ac_curr_mea_rms ?? data.st_AcCurrMeaRms ?? data.ac_curr ?? data.AcCurr,
                 dcCurr: data.st_dc_curr_estd ?? data.st_DcCurrEstd ?? data.dc_curr ?? data.DcCurr,
                 dcVolt: data.st_dc_bus_volt ?? data.st_DcBusVolt ?? data.dc_bus_volt ?? data.DcVolt,
-                thrVolt: data.st_throt_volt ?? data.st_ThrotVolt ?? data.throt_volt ?? data.ThrVolt,
+                thrVolt: data.st_throt_volt ?? data.st_ThrottleVolt ?? data.throt_volt ?? data.ThrVolt,
                 // Flags
                 fwd: data.st_forward ?? data.st_Forward ?? data.fwd ?? data.Fwd,
                 rev: data.st_reverse ?? data.st_Reverse ?? data.rev ?? data.Rev,
@@ -4794,18 +4902,36 @@
             if (d.thrVolt != null) setSliderValue('st_ThrotVolt', parseFloat(d.thrVolt), 5);
 
             // ── 2. Speed → km/h, Distance ──
-            if (d.speed != null) {
-                const rawRpm = Math.round(Math.abs(parseFloat(d.speed)));
-                const gR1 = document.getElementById('input_gearRatio1');
-                const gR2 = document.getElementById('input_gearRatio2');
-                const gCk = document.getElementById('check_gearRatioSelected');
-                let gearRatio = (gR1 && gR2) ? parseFloat(gCk && gCk.checked ? gR2.value : gR1.value) : 10.0;
-                if (isNaN(gearRatio) || gearRatio <= 0) gearRatio = 10.0;
-                const wdEl = document.getElementById('input_wheelDiameterMm');
-                const diam = parseFloat(wdEl ? wdEl.value : 500) || 500;
-                const circ = (diam / 1000) * Math.PI;
-                const speedKmph = (rawRpm / gearRatio) * circ * 60 / 1000;
-                const rsEl = document.getElementById('ui_RealSpeed'); if (rsEl) rsEl.textContent = speedKmph.toFixed(1);
+            if (d.kmph != null || d.speed != null) {
+                let speedKmph;
+                if (d.kmph != null) {
+                    speedKmph = parseFloat(d.kmph);
+                } else {
+                    const rawRpm = Math.round(Math.abs(parseFloat(d.speed)));
+                    const gR1 = document.getElementById('input_gearRatio1');
+                    const gR2 = document.getElementById('input_gearRatio2');
+                    const gCk = document.getElementById('check_gearRatioSelected');
+                    let gearRatio = (gR1 && gR2) ? parseFloat(gCk && gCk.checked ? gR2.value : gR1.value) : 10.0;
+                    if (isNaN(gearRatio) || gearRatio <= 0) gearRatio = 10.0;
+                    const wdEl = document.getElementById('input_wheelDiameterMm');
+                    const diam = parseFloat(wdEl ? wdEl.value : 500) || 500;
+                    const circ = (diam / 1000) * Math.PI;
+                    speedKmph = (rawRpm / gearRatio) * circ * 60 / 1000;
+                }
+
+                const rsEl = document.getElementById('ui_RealSpeed'); 
+                if (rsEl) rsEl.textContent = speedKmph.toFixed(1);
+
+                // Drive the KM/H ring gauge arc (max 60 km/h)
+                const gaugeRing = document.getElementById('speedGaugeRing');
+                if (gaugeRing) {
+                    const pct = Math.min(speedKmph / 60, 1);
+                    const deg = pct * 360;
+                    const arcColor = pct >= 0.66 ? '#00ffaa' : pct >= 0.34 ? '#ffaa00' : '#214FC6';
+                    gaugeRing.style.background = `conic-gradient(${arcColor} ${deg}deg, #111827 ${deg}deg)`;
+                    gaugeRing.style.boxShadow = `inset 0 0 20px rgba(0,0,0,0.5), 0 0 15px ${arcColor}66`;
+                }
+
                 const now = Date.now();
                 if (lastSpeedUpdateTimeMs > 0) totalDistanceKm += speedKmph * (now - lastSpeedUpdateTimeMs) / 3600000.0;
                 lastSpeedUpdateTimeMs = now;
@@ -4910,7 +5036,7 @@
                 'st_HillholdMode', 'st_RegenMode', 'st_AscMode', 'st_PcModeEnable', 'st_ThrotMode',
                 'st_StartStop', 'st_ParkingState', 'st_StandbyState', 'st_MotoringState',
                 'st_VoltDerateMode', 'st_DcClampMode', 'st_MtrTempDerateMode', 'st_CtrTempDerateMode', 'st_AutotuningMode',
-                'st_ErrorCode',
+                'st_ErrorCode', 'st_RPM', 'st_Kmph', 'st_ThrottleVolt',
                 // Short Arduino names
                 'Speed', 'Trq', 'Tiq', 'CtrlTemp', 'MtrTemp',
                 'PhCurr', 'PncCurr', 'AcCurr', 'DcCurr', 'DcVolt', 'ThrVolt',
@@ -5060,7 +5186,8 @@
             const knownKeys1 = [
                 'cmd', 'PhCurr', 'PncCurr', 'Tiq', 'Trq', 'ThrMode',
                 'Eco', 'Limp', 'Brake', 'Fwd', 'Rev', 'Neut',
-                'Hill', 'Regen', 'ASC', 'PCMode'
+                'Hill', 'Regen', 'ASC', 'PCMode',
+                'st_PhResultantCurr', 'st_ThrotTrq', 'st_ThrottleVolt'
             ];
             populateRemainingParams(data, knownKeys1);
 
@@ -5083,7 +5210,28 @@
             if (data.AcCurr !== undefined) setSliderValue('st_AcCurrMeaRms', parseFloat(data.AcCurr), 300);
             if (data.DcCurr !== undefined) setSliderValue('st_DcCurrEstd', parseFloat(data.DcCurr), 300);
             if (data.DcVolt !== undefined) setSliderValue('st_DcBusVolt', parseFloat(data.DcVolt), 100);
-            if (data.ThrVolt !== undefined) setSliderValue('st_ThrotVolt', parseFloat(data.ThrVolt), 5);
+
+            // New telemetry format mapping
+            if (data.st_PhResultantCurr !== undefined) setSliderValue('st_PhResultantCurr', parseFloat(data.st_PhResultantCurr), 300);
+            if (data.st_ThrotTrq !== undefined) setSliderValue('st_ThrotTrq', parseFloat(data.st_ThrotTrq), 100);
+            if (data.st_DcCurrEstd !== undefined) setSliderValue('st_DcCurrEstd', parseFloat(data.st_DcCurrEstd), 300);
+            if (data.st_RPM !== undefined) { const v = Math.abs(parseFloat(data.st_RPM)); const el = document.getElementById('st_MtrSpd'); if (el) el.textContent = Math.round(v); }
+            if (data.st_Kmph !== undefined) { 
+                const speed = parseFloat(data.st_Kmph);
+                const el = document.getElementById('ui_RealSpeed'); if (el) el.textContent = speed.toFixed(1);
+                const gaugeRing = document.getElementById('speedGaugeRing');
+                if (gaugeRing) {
+                    const pct = Math.min(speed / 60, 1);
+                    const deg = pct * 360;
+                    const arcColor = pct >= 0.66 ? '#00ffaa' : pct >= 0.34 ? '#ffaa00' : '#214FC6';
+                    gaugeRing.style.background = `conic-gradient(${arcColor} ${deg}deg, #111827 ${deg}deg)`;
+                    gaugeRing.style.boxShadow = `inset 0 0 20px rgba(0,0,0,0.5), 0 0 15px ${arcColor}66`;
+                }
+            }
+
+            // Throttle Voltage Fix: Support mapping to HTML ID st_ThrotVolt
+            const throttleVal = data.st_ThrottleVolt ?? data.ThrVolt;
+            if (throttleVal !== undefined) setSliderValue('st_ThrotVolt', parseFloat(throttleVal), 5);
 
             // SOC Calculation
             if (data.DcVolt !== undefined) {
@@ -5095,8 +5243,13 @@
                 if (socEl) socEl.textContent = soc;
             }
 
-            // States & Badges
-            if (data.PCMode !== undefined) setBadge('badge_pc', data.PCMode === 1);
+            // States & Badges - Moved PC Mode to remainingParams as requested
+            if (data.PCMode !== undefined) {
+                if (data.PCMode === 1) {
+                    // Add it to a collection that eventually updates remainingParams
+                    data.st_PCMode = "ACTIVE";
+                }
+            }
             if (data.Standby !== undefined) {
                 const sb = document.getElementById('ui_StandbyState');
                 if (sb) sb.textContent = data.Standby === 1 ? 'Standby' : 'Ready';
@@ -5173,6 +5326,19 @@
                 const rsEl = document.getElementById('ui_RealSpeed');
                 if (rsEl) rsEl.textContent = speedKmph.toFixed(1);
 
+                // Drive the KM/H ring gauge arc (max 60 km/h)
+                const gaugeRing = document.getElementById('speedGaugeRing');
+                if (gaugeRing) {
+                    const pct = Math.min(speedKmph / 60, 1);
+                    const deg = pct * 360;
+                    // Colour: 0-33% blue, 34-65% yellow, 66-100% green
+                    const arcColor = pct >= 0.66 ? '#00ffaa' : pct >= 0.34 ? '#ffaa00' : '#214FC6';
+                    gaugeRing.style.background =
+                        `conic-gradient(${arcColor} ${deg}deg, #111827 ${deg}deg)`;
+                    gaugeRing.style.boxShadow =
+                        `inset 0 0 20px rgba(0,0,0,0.5), 0 0 15px ${arcColor}66`;
+                }
+
                 const now = Date.now();
                 if (lastSpeedUpdateTimeMs > 0) {
                     const dtHours = (now - lastSpeedUpdateTimeMs) / 3600000.0;
@@ -5207,9 +5373,9 @@
 
             const knownKeys2 = [
                 'cmd',
-                'PCMode', 'StartStop', 'ParkState', 'Standby', 'Motoring',
+                'StartStop', 'ParkState', 'Standby', 'Motoring',
                 'VoltDer', 'DcClamp', 'MtrTempDer', 'CtrTempDer', 'AutoTune',
-                'CtrlTemp', 'MtrTemp', 'AcCurr', 'DcCurr', 'DcVolt', 'Speed', 'ThrVolt'
+                'CtrlTemp', 'MtrTemp', 'AcCurr', 'DcCurr', 'DcVolt', 'Speed', 'ThrVolt', 'st_ThrottleVolt', 'st_SoftwareVersion', 'st_CANconnect', 'st_BLErange'
             ];
             populateRemainingParams(data, knownKeys2);
 
@@ -6339,11 +6505,11 @@
                 document.getElementById('jsonInput').value = jsonStr;
                 document.getElementById('lastSentPayloadText').textContent = jsonStr;
                 sendJSON();
-                const ws = document.getElementById('writeStatus');
-                if (ws) {
+                const wsList = document.querySelectorAll('.write-status-msg');
+                wsList.forEach(ws => {
                     ws.textContent = '📤 Sending config (batch)...';
                     ws.style.color = '#ffaa00';
-                }
+                });
             } else {
                 alert('No data to send. Please fetch configuration first.');
             }
@@ -6530,6 +6696,22 @@
                 document.querySelectorAll('.bottom-nav .nav-item').forEach(btn => btn.classList.remove('active'));
                 element.classList.add('active');
             }
+        }
+
+        // Switch Write Tabs
+        function switchWriteTab(idx) {
+            const btns = document.querySelectorAll('.write-tab-btn');
+            const panels = document.querySelectorAll('#write_panels_container .write-tab-panel');
+            
+            btns.forEach((b, i) => {
+                if (i === idx - 1) b.classList.add('active');
+                else b.classList.remove('active');
+            });
+            
+            panels.forEach((p, i) => {
+                if (i === idx - 1) p.classList.add('active');
+                else p.classList.remove('active');
+            });
         }
 
         function addToLog(message, isError = false) {
